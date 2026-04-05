@@ -11,7 +11,8 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import { getFirestore, collection, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
-const WHATSAPP    = 'XXXXXXXXXXXX';
+const INSTAGRAM   = 'https://instagram.com/adrimods'; // ← ton lien Instagram
+const VINTED      = 'https://www.vinted.be'; // ← ton lien Vinted
 const EMAILJS_SVC = 'service_m0q9his';
 const EMAILJS_TPL = 'template_c11wvxl';
 const EMAILJS_KEY = 'Y5CoddsVS6RvfRcZN';
@@ -43,7 +44,6 @@ onSnapshot(collection(db,'parts'), snap => {
     .filter(p => p.publish && p.img && p.price && p.stock !== 'rupture');
   renderShop();
   renderFeatured();
-  renderGallery();
   updateCartBadge();
   initPriceRange();
 }, e=>console.error(e));
@@ -102,12 +102,15 @@ function renderShop() {
   // Search
   if(searchQ){ const q=searchQ.toLowerCase(); prods=prods.filter(p=>p.name.toLowerCase().includes(q)||(p.notes||'').toLowerCase().includes(q)); }
   // Sort
-  if(sortBy==='price-asc')  prods.sort((a,b)=>(parseFloat(a.price)||0)-(parseFloat(b.price)||0));
-  if(sortBy==='price-desc') prods.sort((a,b)=>(parseFloat(b.price)||0)-(parseFloat(a.price)||0));
-  if(sortBy==='name-az')    prods.sort((a,b)=>a.name.localeCompare(b.name));
-  if(sortBy==='newest')     prods.sort((a,b)=>(b.ts||0)-(a.ts||0));
-  // Available first option
-  if(sortBy==='available')  prods.sort((a,b)=>{ if(a.stock==='stock'&&b.stock!=='stock') return -1; if(b.stock==='stock'&&a.stock!=='stock') return 1; return 0; });
+  if(sortBy==='price-asc')   prods.sort((a,b)=>(parseFloat(a.price)||0)-(parseFloat(b.price)||0));
+  if(sortBy==='price-desc')  prods.sort((a,b)=>(parseFloat(b.price)||0)-(parseFloat(a.price)||0));
+  if(sortBy==='name-az')     prods.sort((a,b)=>a.name.localeCompare(b.name));
+  if(sortBy==='name-za')     prods.sort((a,b)=>b.name.localeCompare(a.name));
+  if(sortBy==='newest')      prods.sort((a,b)=>(b.ts||0)-(a.ts||0));
+  if(sortBy==='date-asc')    prods.sort((a,b)=>(a.ts||0)-(b.ts||0));
+  if(sortBy==='date-desc')   prods.sort((a,b)=>(b.ts||0)-(a.ts||0));
+  if(sortBy==='featured')    prods.sort((a,b)=>(b.ts||0)-(a.ts||0)); // newest first as featured
+  if(sortBy==='available')   prods.sort((a,b)=>{ if(a.stock==='stock'&&b.stock!=='stock') return -1; if(b.stock==='stock'&&a.stock!=='stock') return 1; return 0; });
 
   const el=document.getElementById('shop-grid'); if(!el) return;
   const cnt=document.getElementById('shop-count'); if(cnt) cnt.textContent=prods.length+' produit'+(prods.length!==1?'s':'');
@@ -160,7 +163,7 @@ window.openProduct = function(id) {
   const p=allProducts.find(x=>x.id===id); if(!p) return;
   const sold=p.stock==='vendu';
   const sizes=p.sizes?p.sizes.split(',').map(s=>s.trim()).filter(Boolean):[];
-  const waMsg=encodeURIComponent(`Bonjour, je suis intéressé par "${p.name}" à ${p.price}€. Est-ce encore disponible ?`);
+  
   document.getElementById('product-modal-body').innerHTML=`
     <div class="pm-img">
       <img src="${p.img}" alt="${p.name}">
@@ -180,15 +183,15 @@ window.openProduct = function(id) {
             <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
             Ajouter au panier
           </button>
-          <a class="btn-whatsapp" href="https://wa.me/${WHATSAPP}?text=${waMsg}" target="_blank">
-            <svg width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-            Commander via WhatsApp
+          <a class="btn-instagram" href="${INSTAGRAM}" target="_blank">
+            <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1.5" fill="currentColor" stroke="none"/></svg>
+            Contacter sur Instagram
           </a>`:'<p style="color:#888;font-size:14px;text-align:center">Cette pièce n\'est plus disponible.</p>'}
       </div>
       <div class="pm-guarantee">
         <div class="pm-g-item">🔧 Assemblé à la main en Belgique</div>
         <div class="pm-g-item">📦 Livraison soignée partout en Europe</div>
-        <div class="pm-g-item">💬 Support WhatsApp inclus</div>
+        <div class="pm-g-item">📸 Suivez-nous sur Instagram</div>
       </div>
     </div>`;
   document.getElementById('product-modal').classList.remove('hidden');
@@ -247,39 +250,18 @@ window.openCart = function() { renderCart(); document.getElementById('cart-modal
 window.closeCart = function() { document.getElementById('cart-modal').classList.add('hidden'); document.body.style.overflow=''; };
 window.checkoutCart = function() {
   if(!cart.length) return;
-  const items=cart.map(c=>`• ${c.name}${c.size?' ('+c.size+')':''} — ${parseFloat(c.price).toFixed(2)}€`).join('\n');
-  const total=cart.reduce((a,c)=>a+(parseFloat(c.price)||0),0);
-  window.open(`https://wa.me/${WHATSAPP}?text=${encodeURIComponent('Bonjour ! Je souhaite commander :\n\n'+items+'\n\nTotal : '+total.toFixed(2)+'€\n\nPouvez-vous confirmer ?')}`,'_blank');
+  window.open(INSTAGRAM,'_blank');
 };
 
 // ── NAV ───────────────────────────────────────────────────────────────────────
-// ── GALLERY ───────────────────────────────────────────────────────────────────
-function renderGallery() {
-  const el=document.getElementById('gallery-grid'); if(!el) return;
-  // Show all completed watches (published or not, just use published ones)
-  const items=allProducts.filter(p=>p.sid==='complete'&&p.img).sort((a,b)=>(b.ts||0)-(a.ts||0));
-  if(!items.length){el.innerHTML='<div class="no-products">Les réalisations arrivent bientôt !</div>';return;}
-  el.innerHTML=`<div class="gallery-masonry">${items.map(p=>`
-    <div class="gallery-card" onclick="openProduct('${p.id}')">
-      <div class="gallery-img-wrap"><img src="${p.img}" alt="${p.name}" loading="lazy"></div>
-      <div class="gallery-card-body">
-        <div class="gallery-card-name">${p.name}</div>
-        <div class="gallery-card-price">${p.stock==='vendu'?'<span class="sold-price">Vendu</span>':parseFloat(p.price).toFixed(2)+' €'}</div>
-      </div>
-    </div>`).join('')}</div>`;
-}
-
-window.showPage = function(page) {
+window.openSocial = function(url) { window.open(url,'_blank'); };
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.getElementById('page-'+page).classList.add('active');
   document.querySelectorAll('.nav-link').forEach(l=>l.classList.toggle('active',l.dataset.page===page));
   window.scrollTo({top:0,behavior:'smooth'});
   if(page==='shop') renderShop();
-  if(page==='gallery') renderGallery();
 };
-window.openWhatsApp = function() {
-  window.open(`https://wa.me/${WHATSAPP}?text=${encodeURIComponent("Bonjour, je suis intéressé par une de vos montres Adri Mods 👋")}`,'_blank');
-};
+window.openSocial = function(url) { window.open(url,'_blank'); };
 
 // ── CONTACT ───────────────────────────────────────────────────────────────────
 window.sendContact = async function(e) {
@@ -526,8 +508,8 @@ a{text-decoration:none;color:inherit}
 .pm-actions{display:flex;flex-direction:column;gap:8px;margin-bottom:16px;margin-top:auto}
 .btn-add-cart-big{display:flex;align-items:center;justify-content:center;gap:8px;padding:13px 20px;background:var(--ink);color:#fff;border-radius:var(--r-sm);font-size:14px;font-weight:600;cursor:pointer;border:none;font-family:'Inter',sans-serif;transition:all .14s}
 .btn-add-cart-big:hover{background:#333}
-.btn-whatsapp{display:flex;align-items:center;justify-content:center;gap:8px;padding:11px 20px;background:#25D366;color:#fff;border-radius:var(--r-sm);font-size:13px;font-weight:600;cursor:pointer;transition:background .14s;font-family:'Inter',sans-serif;border:none}
-.btn-whatsapp:hover{background:#1da851}
+.btn-instagram{display:flex;align-items:center;justify-content:center;gap:8px;padding:11px 20px;background:#E1306C;color:#fff;border-radius:var(--r-sm);font-size:13px;font-weight:600;cursor:pointer;transition:background .14s;font-family:'Inter',sans-serif;border:none;text-decoration:none}
+.btn-instagram:hover{background:#c0255a}
 .pm-guarantee{display:flex;flex-direction:column;gap:4px;padding-top:12px;border-top:1px solid var(--border)}
 .pm-g-item{font-size:11px;color:var(--ink3)}
 
@@ -555,25 +537,13 @@ a{text-decoration:none;color:inherit}
 .cart-checkout{width:100%;padding:13px;background:var(--ink);color:#fff;border:none;border-radius:var(--r-sm);font-size:14px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;display:flex;align-items:center;justify-content:center;gap:8px;transition:background .14s}
 .cart-checkout:hover{background:#333}
 
-/* ── WA FLOAT ── */
-.wa-float{position:fixed;bottom:24px;right:24px;z-index:99;width:52px;height:52px;background:#25D366;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 4px 20px rgba(37,211,102,.4);transition:all .2s}
-.wa-float:hover{transform:scale(1.08)}
-.wa-float svg{width:24px;height:24px;fill:#fff}
+
 
 /* ── TOAST ── */
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(60px);background:var(--ink);color:#fff;padding:10px 20px;border-radius:20px;font-size:13px;font-weight:500;z-index:999;opacity:0;transition:all .22s;pointer-events:none}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
 /* ── GALLERY ── */
-.gallery-masonry{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:20px}
-.gallery-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;cursor:pointer;transition:all .18s}
-.gallery-card:hover{border-color:var(--border2);box-shadow:0 8px 32px rgba(0,0,0,.1);transform:translateY(-3px)}
-.gallery-img-wrap{aspect-ratio:1;overflow:hidden;background:#f0ede8}
-.gallery-img-wrap img{width:100%;height:100%;object-fit:cover;transition:transform .4s}
-.gallery-card:hover .gallery-img-wrap img{transform:scale(1.05)}
-.gallery-card-body{padding:12px 14px;display:flex;align-items:center;justify-content:space-between}
-.gallery-card-name{font-size:13px;font-weight:600;color:var(--ink);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-right:8px}
-.gallery-card-price{font-family:'Playfair Display',serif;font-size:15px;color:var(--ink);flex-shrink:0}
 
 /* ── SHOP FILTERS INLINE ── */
 .shop-filters-inline{display:flex;align-items:center;gap:10px;margin-right:14px}
@@ -612,7 +582,6 @@ a{text-decoration:none;color:inherit}
     <div class="nav-links">
       <button class="nav-link active" data-page="home" onclick="showPage('home')">Accueil</button>
       <button class="nav-link" data-page="shop" onclick="showPage('shop')">Boutique</button>
-      <button class="nav-link" data-page="gallery" onclick="showPage('gallery')">Réalisations</button>
       <button class="nav-link" data-page="custom" onclick="showPage('custom')">Sur mesure</button>
       <button class="nav-link" data-page="about" onclick="showPage('about')">À propos</button>
       <button class="nav-link" data-page="contact" onclick="showPage('contact')">Contact</button>
@@ -627,9 +596,9 @@ a{text-decoration:none;color:inherit}
         <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
         <span class="cart-badge" id="cart-badge">0</span>
       </button>
-      <button class="nav-cta" onclick="openWhatsApp()">
-        <svg width="13" height="13" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-        WhatsApp
+      <button class="nav-cta" onclick="openSocial(INSTAGRAM)">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><circle cx="12" cy="12" r="4" fill="none"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>
+        Instagram
       </button>
     </div>
   </div>
@@ -652,7 +621,7 @@ a{text-decoration:none;color:inherit}
         <div class="trust-item"><span>🇧🇪</span> Assemblé en Belgique</div>
         <div class="trust-item"><span>⌚</span> Mouvement Seiko</div>
         <div class="trust-item"><span>📦</span> Livraison Europe</div>
-        <div class="trust-item"><span>💬</span> Support WhatsApp</div>
+        <div class="trust-item"><span>📸</span> Instagram & Vinted</div>
       </div>
     </div>
     <div class="section">
@@ -674,7 +643,7 @@ a{text-decoration:none;color:inherit}
         </div>
         <div class="steps">
           <div class="step"><div class="step-num">1</div><div class="step-title">Vous choisissez</div><div class="step-text">Parcourez la boutique ou demandez une création sur mesure selon vos envies.</div></div>
-          <div class="step"><div class="step-num">2</div><div class="step-title">Vous commandez</div><div class="step-text">Un message WhatsApp suffit. On confirme ensemble les détails et le paiement.</div></div>
+          <div class="step"><div class="step-num">2</div><div class="step-title">Vous commandez</div><div class="step-text">Un message Instagram ou Vinted suffit. On confirme ensemble les détails et le paiement.</div></div>
           <div class="step"><div class="step-num">3</div><div class="step-title">Vous recevez</div><div class="step-text">Votre montre est emballée avec soin et expédiée partout en Europe. Suivi inclus.</div></div>
         </div>
       </div>
@@ -697,7 +666,6 @@ a{text-decoration:none;color:inherit}
       <div class="footer-links">
         <span class="footer-link" onclick="showPage('home')">Accueil</span>
         <span class="footer-link" onclick="showPage('shop')">Boutique</span>
-        <span class="footer-link" onclick="showPage('gallery')">Réalisations</span>
         <span class="footer-link" onclick="showPage('custom')">Sur mesure</span>
         <span class="footer-link" onclick="showPage('about')">À propos</span>
         <span class="footer-link" onclick="showPage('contact')">Contact</span>
@@ -722,11 +690,15 @@ a{text-decoration:none;color:inherit}
             <div class="sfi-group">
               <span class="sfi-lbl">Trier</span>
               <select class="filter-select" onchange="setSort(this.value)">
+                <option value="featured">En vedette</option>
                 <option value="newest">Nouveautés</option>
-                <option value="price-asc">Prix ↑</option>
-                <option value="price-desc">Prix ↓</option>
-                <option value="name-az">A→Z</option>
-                <option value="available">Disponibles</option>
+                <option value="available">Disponibles d'abord</option>
+                <option value="name-az">Alphabétique, A → Z</option>
+                <option value="name-za">Alphabétique, Z → A</option>
+                <option value="price-asc">Prix : faible à élevé</option>
+                <option value="price-desc">Prix : élevé à faible</option>
+                <option value="date-asc">Date, ancienne → récente</option>
+                <option value="date-desc">Date, récente → ancienne</option>
               </select>
             </div>
             <div class="sfi-sep"></div>
@@ -752,7 +724,6 @@ a{text-decoration:none;color:inherit}
       <div class="footer-links">
         <span class="footer-link" onclick="showPage('home')">Accueil</span>
         <span class="footer-link" onclick="showPage('shop')">Boutique</span>
-        <span class="footer-link" onclick="showPage('gallery')">Réalisations</span>
         <span class="footer-link" onclick="showPage('custom')">Sur mesure</span>
         <span class="footer-link" onclick="showPage('about')">À propos</span>
         <span class="footer-link" onclick="showPage('contact')">Contact</span>
@@ -809,7 +780,6 @@ a{text-decoration:none;color:inherit}
       <div class="footer-links">
         <span class="footer-link" onclick="showPage('home')">Accueil</span>
         <span class="footer-link" onclick="showPage('shop')">Boutique</span>
-        <span class="footer-link" onclick="showPage('gallery')">Réalisations</span>
         <span class="footer-link" onclick="showPage('custom')">Sur mesure</span>
         <span class="footer-link" onclick="showPage('about')">À propos</span>
         <span class="footer-link" onclick="showPage('contact')">Contact</span>
@@ -853,7 +823,6 @@ a{text-decoration:none;color:inherit}
       <div class="footer-links">
         <span class="footer-link" onclick="showPage('home')">Accueil</span>
         <span class="footer-link" onclick="showPage('shop')">Boutique</span>
-        <span class="footer-link" onclick="showPage('gallery')">Réalisations</span>
         <span class="footer-link" onclick="showPage('custom')">Sur mesure</span>
         <span class="footer-link" onclick="showPage('about')">À propos</span>
         <span class="footer-link" onclick="showPage('contact')">Contact</span>
@@ -875,10 +844,14 @@ a{text-decoration:none;color:inherit}
       <div class="contact-grid">
         <div class="contact-info">
           <h3>Parlons-en</h3>
-          <p>Pour commander, demander un devis ou poser une question — WhatsApp est le moyen le plus rapide.</p>
-          <div class="contact-option" onclick="openWhatsApp()" style="margin-bottom:10px">
-            <div class="co-icon"><svg width="20" height="20" fill="#fff" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg></div>
-            <div><div class="contact-option-title">WhatsApp</div><div class="contact-option-sub">+XX XXX XX XX XX · Réponse rapide</div></div>
+          <p>Pour commander, demander un devis ou poser une question — Instagram ou Vinted sont les meilleurs moyens de nous joindre.</p>
+          <div class="contact-option" onclick="openSocial(INSTAGRAM)" style="margin-bottom:10px">
+            <div class="co-icon" style="background:#E1306C"><svg width="18" height="18" fill="none" stroke="#fff" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1.5" fill="#fff" stroke="none"/></svg></div>
+            <div><div class="contact-option-title">Instagram</div><div class="contact-option-sub">@adrimods · Messages directs</div></div>
+          </div>
+          <div class="contact-option" onclick="openSocial(VINTED)" style="margin-bottom:10px">
+            <div class="co-icon" style="background:#09b1ba"><svg width="18" height="18" fill="none" stroke="#fff" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M8 8l4 8 4-8"/></svg></div>
+            <div><div class="contact-option-title">Vinted</div><div class="contact-option-sub">Boutique Vinted · Achat sécurisé</div></div>
           </div>
           <div class="contact-hours">
             <div class="ch-title">🕐 Horaires de réponse</div>
@@ -919,36 +892,6 @@ a{text-decoration:none;color:inherit}
       <div class="footer-links">
         <span class="footer-link" onclick="showPage('home')">Accueil</span>
         <span class="footer-link" onclick="showPage('shop')">Boutique</span>
-        <span class="footer-link" onclick="showPage('gallery')">Réalisations</span>
-        <span class="footer-link" onclick="showPage('custom')">Sur mesure</span>
-        <span class="footer-link" onclick="showPage('about')">À propos</span>
-        <span class="footer-link" onclick="showPage('contact')">Contact</span>
-      </div>
-      <div class="footer-copy">© 2025 Adri Mods — Tous droits réservés</div>
-    </div>
-  </footer>
-</div>
-
-<!-- ══ GALERIE ══ -->
-<div class="page" id="page-gallery">
-  <div class="page-content">
-    <div class="section">
-      <div class="section-hdr">
-        <div class="section-eyebrow">Réalisations</div>
-        <h2 class="section-title">Montres assemblées</h2>
-        <p class="section-sub">Chaque montre est unique. Voici quelques exemples de mods réalisés à la main.</p>
-      </div>
-      <div class="gallery-grid" id="gallery-grid"><div class="no-products">Chargement…</div></div>
-    </div>
-  </div>
-  <footer class="site-footer">
-    <div class="footer-inner">
-      <div class="footer-logo">Adri <em>Mods</em></div>
-      <div class="footer-sub">Montres Seiko Mod artisanales · Belgique</div>
-      <div class="footer-links">
-        <span class="footer-link" onclick="showPage('home')">Accueil</span>
-        <span class="footer-link" onclick="showPage('shop')">Boutique</span>
-        <span class="footer-link" onclick="showPage('gallery')">Réalisations</span>
         <span class="footer-link" onclick="showPage('custom')">Sur mesure</span>
         <span class="footer-link" onclick="showPage('about')">À propos</span>
         <span class="footer-link" onclick="showPage('contact')">Contact</span>
@@ -975,15 +918,10 @@ a{text-decoration:none;color:inherit}
       <div class="cart-total-row"><span class="cart-total-lbl">Total</span><span class="cart-total-val" id="cart-total">0.00 €</span></div>
       <button class="cart-checkout" id="cart-checkout-btn" style="display:none" onclick="checkoutCart()">
         <svg width="15" height="15" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-        Commander via WhatsApp
+        Commander via Instagram
       </button>
     </div>
   </div>
-</div>
-
-<!-- WA FLOAT -->
-<div class="wa-float" onclick="openWhatsApp()">
-  <svg viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
 </div>
 
 <div class="toast" id="toast"></div>
