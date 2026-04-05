@@ -488,15 +488,15 @@ a{text-decoration:none;color:inherit}
 /* ── PRODUCT MODAL ── */
 .pm-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;display:flex;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(4px)}
 .pm-overlay.hidden{display:none}
-.pm-modal{background:var(--surface);border-radius:var(--r);width:100%;max-width:1100px;max-height:94vh;overflow-y:auto;display:grid;grid-template-columns:1.2fr 1fr;box-shadow:0 24px 80px rgba(0,0,0,.3);position:relative}
+.pm-modal{background:var(--surface);border-radius:var(--r);width:100%;max-width:780px;max-height:88vh;overflow-y:auto;display:grid;grid-template-columns:1fr 1fr;box-shadow:0 24px 80px rgba(0,0,0,.3);position:relative}
 .pm-img{aspect-ratio:1;background:#f0ede8;overflow:hidden;position:relative}
-.pm-img img{width:100%;height:100%;object-fit:cover}
+.pm-img img{width:100%;height:100%;object-fit:cover;image-rendering:auto}
 .pm-sold{position:absolute;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:28px;color:#fff;letter-spacing:.1em}
 .pm-close{position:absolute;top:14px;right:14px;width:30px;height:30px;background:rgba(0,0,0,.45);color:#fff;border:none;border-radius:50%;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;z-index:10}
-.pm-info{padding:28px;display:flex;flex-direction:column;overflow-y:auto;max-height:92vh}
+.pm-info{padding:24px;display:flex;flex-direction:column;overflow-y:auto;max-height:88vh}
 .pm-brand{font-family:'DM Mono',monospace;font-size:9px;color:var(--ink3);letter-spacing:.12em;text-transform:uppercase;margin-bottom:6px}
-.pm-name{font-family:'Playfair Display',serif;font-size:28px;font-weight:500;color:var(--ink);line-height:1.2;margin-bottom:10px}
-.pm-price{font-family:'Playfair Display',serif;font-size:30px;font-weight:500;color:var(--ink);margin-bottom:16px}
+.pm-name{font-family:'Playfair Display',serif;font-size:22px;font-weight:500;color:var(--ink);line-height:1.2;margin-bottom:10px}
+.pm-price{font-family:'Playfair Display',serif;font-size:24px;font-weight:500;color:var(--ink);margin-bottom:16px}
 .pm-price.sold-text{font-size:16px;color:var(--ink3);font-family:'Inter',sans-serif}
 .pm-sizes-block{margin-bottom:16px}
 .pm-lbl-title{font-size:11px;font-weight:600;color:var(--ink2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px}
