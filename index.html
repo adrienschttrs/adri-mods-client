@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Adri Mods — Seiko Mod Watches</title>
-<meta name="description" content="Montres Seiko Mod artisanales et boîtes de voyage premium. Chaque mod est assemblé à la main en Belgique.">
+<meta name="description" content="Montres Seiko Mod artisanales et boîtes de voyage premium. Chaque mod est assemblé avec passion.">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 <script>
@@ -273,7 +273,7 @@ window.openProduct = function(id) {
           </a>`:'<p style="color:#888;font-size:14px;text-align:center">Cette pièce n\'est plus disponible.</p>'}
       </div>
       <div class="pm-guarantee">
-        <div class="pm-g-item">🔧 Assemblé à la main en Belgique</div>
+        <div class="pm-g-item">🔧 Assemblé à la main avec soin</div>
         <div class="pm-g-item">📦 Livraison soignée partout en Europe</div>
         <div class="pm-g-item">📸 Suivez-nous sur Instagram</div>
       </div>
@@ -363,6 +363,17 @@ window.showPage = function(page) {
   if(page==='shop') renderShop();
 };
 window.openSocial = function(url) { window.open(url,'_blank'); };
+
+window.toggleMobileMenu = function() {
+  const menu = document.getElementById('mobile-menu');
+  const btn = document.getElementById('hamburger-btn');
+  menu.classList.toggle('hidden');
+  btn.classList.toggle('open');
+};
+window.closeMobileMenu = function() {
+  document.getElementById('mobile-menu').classList.add('hidden');
+  document.getElementById('hamburger-btn').classList.remove('open');
+};
 
 // ── TOAST ─────────────────────────────────────────────────────────────────────
 function showToast(msg) {
@@ -655,50 +666,68 @@ a{text-decoration:none;color:inherit}
 .photo-upload-zone{border:1.5px dashed var(--border2);border-radius:var(--r-sm);padding:16px;text-align:center;cursor:pointer;transition:all .14s;background:var(--bg);display:flex;align-items:center;justify-content:center;gap:10px;color:var(--ink3);font-size:13px;font-family:'Inter',sans-serif}
 .photo-upload-zone:hover{border-color:var(--ink);color:var(--ink);background:#f5f3f0}
 
+/* ── HAMBURGER + MOBILE MENU ── */
+.hamburger{display:none;flex-direction:column;justify-content:center;gap:5px;width:38px;height:38px;background:transparent;border:1px solid var(--border);border-radius:var(--r-sm);cursor:pointer;padding:8px}
+.hamburger span{display:block;width:100%;height:2px;background:var(--ink);border-radius:2px;transition:all .2s}
+.hamburger.open span:nth-child(1){transform:translateY(7px) rotate(45deg)}
+.hamburger.open span:nth-child(2){opacity:0}
+.hamburger.open span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
+.desktop-only{display:flex}
+.mobile-menu{position:fixed;top:64px;left:0;right:0;background:var(--surface);border-bottom:1px solid var(--border);z-index:99;padding:12px 16px;display:flex;flex-direction:column;gap:4px;box-shadow:0 8px 24px rgba(0,0,0,.1)}
+.mobile-menu.hidden{display:none}
+.mobile-menu-search{display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--bg);border:1px solid var(--border);border-radius:var(--r-sm);margin-bottom:6px}
+.mobile-menu-search svg{color:var(--ink3);flex-shrink:0}
+.mobile-menu-search input{border:none;background:transparent;font-size:14px;font-family:'Inter',sans-serif;color:var(--ink);outline:none;width:100%}
+.mobile-nav-link{width:100%;padding:12px 14px;text-align:left;background:transparent;border:none;font-size:15px;font-weight:500;color:var(--ink);cursor:pointer;font-family:'Inter',sans-serif;border-radius:var(--r-sm);transition:background .12s}
+.mobile-nav-link:hover{background:var(--bg)}
+.mobile-nav-instagram{display:flex;align-items:center;gap:8px;width:100%;padding:12px 14px;background:var(--ink);color:#fff;border:none;border-radius:var(--r-sm);font-size:14px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;margin-top:6px}
+
 /* ── RESPONSIVE ── */
 
-/* Tablette (768px - 1024px) */
+/* Tablette */
 @media(max-width:1024px){
-  .nav-search{width:180px}
-  .nav-search:focus{width:240px}
+  .nav-search{width:160px}
+  .nav-search:focus{width:220px}
   .product-grid{grid-template-columns:repeat(auto-fill,minmax(200px,1fr))}
   .about-grid{gap:40px}
   .custom-grid,.contact-grid{gap:32px}
-  .pm-modal{max-width:700px}
 }
 
-/* Mobile (max 768px) */
+/* Mobile */
 @media(max-width:768px){
   /* Nav */
   .nav-inner{grid-template-columns:1fr auto}
   .nav-links{display:none}
-  .nav-search{width:130px;font-size:12px;padding:7px 10px 7px 32px}
-  .nav-search:focus{width:160px}
-  .search-dropdown{width:calc(100vw - 32px);right:-60px}
-  .nav-cta span{display:none}
+  .nav-search-wrap{display:none}
+  .desktop-only{display:none !important}
+  .hamburger{display:flex}
+  .nav-right{gap:6px}
 
   /* Hero */
-  .hero{padding:48px 16px}
-  .hero-title{font-size:clamp(28px,8vw,48px)}
-  .hero-sub{font-size:14px}
-  .hero-btns{flex-direction:column;align-items:center}
-  .btn-primary,.btn-secondary{width:100%;max-width:280px;text-align:center}
+  .hero{padding:44px 20px 52px}
+  .hero-title{font-size:clamp(26px,7vw,40px);line-height:1.15}
+  .hero-sub{font-size:14px;margin-bottom:28px}
+  .hero-btns{flex-direction:row;flex-wrap:wrap;gap:10px;justify-content:center}
+  .btn-primary,.btn-secondary{flex:1;min-width:140px;max-width:200px;padding:12px 16px;font-size:13px}
 
   /* Trust bar */
-  .trust-inner{gap:16px}
+  .trust-inner{gap:12px 20px}
   .trust-item{font-size:11px}
 
   /* Section */
-  .section{padding:40px 16px}
+  .section{padding:36px 16px}
+  .section-title{font-size:clamp(22px,5vw,30px)}
 
   /* Shop */
   .shop-topbar{padding:10px 16px;top:58px}
   .shop-topbar-inner{flex-direction:column;align-items:flex-start;gap:8px}
-  .shop-cats{flex-wrap:wrap}
+  .shop-cats{flex-wrap:wrap;gap:6px}
+  .cat-btn{font-size:11px;padding:6px 12px}
   .shop-filters-inline{flex-wrap:wrap;gap:6px}
-  .shop-grid-wrap{padding:16px}
-  .product-grid{grid-template-columns:repeat(2,1fr);gap:12px}
-  .card-body{padding:10px 12px}
+  .shop-right{flex-wrap:wrap;gap:6px}
+  .shop-grid-wrap{padding:14px 12px}
+  .product-grid{grid-template-columns:repeat(2,1fr);gap:10px}
+  .card-body{padding:10px 10px 12px}
   .card-name{font-size:12px}
   .card-price{font-size:15px}
   .card-btn{padding:6px 10px;font-size:10px}
@@ -706,32 +735,35 @@ a{text-decoration:none;color:inherit}
   .filter-bar-inner{gap:6px;flex-wrap:wrap}
 
   /* Product modal */
-  .pm-modal{grid-template-columns:1fr;max-height:95vh}
-  .pm-img{aspect-ratio:16/9}
-  .pm-info{padding:18px}
-  .pm-name{font-size:20px}
-  .pm-price{font-size:22px}
+  .pm-modal{grid-template-columns:1fr;max-height:96vh}
+  .pm-img{aspect-ratio:4/3}
+  .pm-info{padding:16px}
+  .pm-name{font-size:19px}
+  .pm-price{font-size:21px;margin-bottom:12px}
 
   /* Grids */
   .about-grid,.contact-grid,.custom-grid{grid-template-columns:1fr;gap:24px}
-  .steps{grid-template-columns:1fr;gap:24px}
+  .steps{grid-template-columns:1fr;gap:20px}
 
   /* Footer */
-  .footer-links{gap:14px}
+  .footer-links{gap:12px;font-size:12px}
+  .footer-logo{font-size:18px}
 
   /* Cart */
   .cart-panel{max-width:100%}
 
-  /* Contact */
+  /* Contact hours */
   .contact-hours{padding:12px}
 }
 
-/* Très petit mobile (max 390px) */
+/* Très petit mobile */
 @media(max-width:390px){
   .product-grid{grid-template-columns:1fr}
-  .nav-search{width:100px}
-  .hero-title{font-size:26px}
-  .shop-cats .cat-btn{font-size:11px;padding:5px 10px}
+  .hero-title{font-size:24px}
+  .hero-btns{flex-direction:column;align-items:stretch}
+  .btn-primary,.btn-secondary{max-width:100%;text-align:center}
+  .shop-cats{gap:4px}
+  .cat-btn{font-size:10px;padding:5px 9px}
 }
 </style>
 </head>
@@ -758,19 +790,40 @@ a{text-decoration:none;color:inherit}
         <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
         <span class="cart-badge" id="cart-badge">0</span>
       </button>
-      <button class="nav-cta" onclick="openSocial(INSTAGRAM)">
+      <button class="nav-cta desktop-only" onclick="openSocial(INSTAGRAM)">
         <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><circle cx="12" cy="12" r="4" fill="none"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>
         Instagram
+      </button>
+      <!-- Hamburger -->
+      <button class="hamburger" id="hamburger-btn" onclick="toggleMobileMenu()" aria-label="Menu">
+        <span></span><span></span><span></span>
       </button>
     </div>
   </div>
 </nav>
 
+<!-- MOBILE MENU -->
+<div class="mobile-menu hidden" id="mobile-menu">
+  <div class="mobile-menu-search">
+    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <input type="text" placeholder="Rechercher…" oninput="onSearchInput(this.value);closeMobileMenu();showPage('shop')" autocomplete="off">
+  </div>
+  <button class="mobile-nav-link" onclick="showPage('home');closeMobileMenu()">Accueil</button>
+  <button class="mobile-nav-link" onclick="showPage('shop');closeMobileMenu()">Boutique</button>
+  <button class="mobile-nav-link" onclick="showPage('custom');closeMobileMenu()">Sur mesure</button>
+  <button class="mobile-nav-link" onclick="showPage('about');closeMobileMenu()">À propos</button>
+  <button class="mobile-nav-link" onclick="showPage('contact');closeMobileMenu()">Contact</button>
+  <button class="mobile-nav-instagram" onclick="openSocial(INSTAGRAM);closeMobileMenu()">
+    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1.5" fill="currentColor" stroke="none"/></svg>
+    Instagram
+  </button>
+</div>
+
 <!-- ══ HOME ══ -->
 <div class="page active" id="page-home">
   <div class="page-content">
     <section class="hero">
-      <div class="hero-eyebrow">Artisan Horloger · Belgique</div>
+      <div class="hero-eyebrow">Artisan Horloger</div>
       <h1 class="hero-title">Des montres uniques,<br><em>assemblées avec passion</em></h1>
       <p class="hero-sub">Chaque mod est construit à la main à partir de mouvements Seiko et de composants premium. Une montre qui vous ressemble.</p>
       <div class="hero-btns">
@@ -780,7 +833,7 @@ a{text-decoration:none;color:inherit}
     </section>
     <div class="trust-bar">
       <div class="trust-inner">
-        <div class="trust-item"><span>🇧🇪</span> Assemblé en Belgique</div>
+        
         <div class="trust-item"><span>⌚</span> Mouvement Seiko</div>
         <div class="trust-item"><span>📦</span> Livraison Europe</div>
         <div class="trust-item"><span>📸</span> Instagram & Vinted</div>
@@ -824,7 +877,7 @@ a{text-decoration:none;color:inherit}
   <footer class="site-footer">
     <div class="footer-inner">
       <div class="footer-logo">Adri <em>Mods</em></div>
-      <div class="footer-sub">Montres Seiko Mod artisanales · Belgique</div>
+      <div class="footer-sub">Montres Seiko Mod artisanales</div>
       <div class="footer-links">
         <span class="footer-link" onclick="showPage('home')">Accueil</span>
         <span class="footer-link" onclick="showPage('shop')">Boutique</span>
@@ -882,7 +935,7 @@ a{text-decoration:none;color:inherit}
   <footer class="site-footer">
     <div class="footer-inner">
       <div class="footer-logo">Adri <em>Mods</em></div>
-      <div class="footer-sub">Montres Seiko Mod artisanales · Belgique</div>
+      <div class="footer-sub">Montres Seiko Mod artisanales</div>
       <div class="footer-links">
         <span class="footer-link" onclick="showPage('home')">Accueil</span>
         <span class="footer-link" onclick="showPage('shop')">Boutique</span>
@@ -907,10 +960,10 @@ a{text-decoration:none;color:inherit}
       <div class="custom-grid">
         <div class="custom-info">
           <h3>Ce que nous pouvons faire</h3>
-          <p>Chaque mod est assemblé à la main. Vous choisissez le style, la taille, les couleurs — nous nous chargeons du reste.</p>
+          <p>Chaque mod est assemblé sur mesure. Vous choisissez le style, la taille, les couleurs — nous nous chargeons du reste.</p>
           <div class="custom-examples">
             <div class="custom-example"><span class="custom-example-icon">🎨</span><div class="custom-example-text">Style et coloris personnalisés selon vos préférences</div></div>
-            <div class="custom-example"><span class="custom-example-icon">📏</span><div class="custom-example-text">Taille 36mm, 39mm ou 41mm selon votre poignet</div></div>
+            <div class="custom-example"><span class="custom-example-icon">📏</span><div class="custom-example-text">Taille adaptée selon votre poignet (de 36mm à 44mm)</div></div>
             <div class="custom-example"><span class="custom-example-icon">⚙️</span><div class="custom-example-text">Choix du mouvement (automatique NH ou chronographe VK)</div></div>
             <div class="custom-example"><span class="custom-example-icon">💎</span><div class="custom-example-text">Finitions premium : ton or, ton argent, bicolore</div></div>
           </div>
@@ -950,7 +1003,7 @@ a{text-decoration:none;color:inherit}
   <footer class="site-footer">
     <div class="footer-inner">
       <div class="footer-logo">Adri <em>Mods</em></div>
-      <div class="footer-sub">Montres Seiko Mod artisanales · Belgique</div>
+      <div class="footer-sub">Montres Seiko Mod artisanales</div>
       <div class="footer-links">
         <span class="footer-link" onclick="showPage('home')">Accueil</span>
         <span class="footer-link" onclick="showPage('shop')">Boutique</span>
@@ -976,13 +1029,13 @@ a{text-decoration:none;color:inherit}
           <div class="section-eyebrow" style="text-align:left;margin-bottom:10px">Notre histoire</div>
           <h2>La passion de<br><em>l'horlogerie mod</em></h2>
           <p>Adri Mods est né d'une passion simple : transformer des mouvements Seiko robustes en montres d'exception originales, à une fraction du prix des grandes marques.</p>
-          <p>Chaque mod est assemblé à la main en Belgique, avec des composants soigneusement sélectionnés. Le résultat : une montre unique, fiable, et qui raconte votre histoire.</p>
+          <p>Chaque mod est assemblé avec soin, avec des composants soigneusement sélectionnés. Le résultat : une montre unique, fiable, et qui raconte votre histoire.</p>
           <p>Que vous cherchiez quelque chose de précis ou que vous vouliez une création sur mesure, nous pouvons créer la montre de vos rêves.</p>
           <div class="about-hint">💡 Pour changer la photo : uploadez sur Cloudinary, copiez le lien, collez dans la variable <code>ABOUT_PHOTO</code> en haut du fichier HTML.</div>
           <div class="about-tags">
-            <span class="about-tag">🇧🇪 Belgique</span>
+            
             <span class="about-tag">⚙️ Seiko NH / VK</span>
-            <span class="about-tag">🔧 Assemblage main</span>
+            
             <span class="about-tag">📦 Livraison Europe</span>
             <span class="about-tag">💬 Sur mesure</span>
           </div>
@@ -993,7 +1046,7 @@ a{text-decoration:none;color:inherit}
   <footer class="site-footer">
     <div class="footer-inner">
       <div class="footer-logo">Adri <em>Mods</em></div>
-      <div class="footer-sub">Montres Seiko Mod artisanales · Belgique</div>
+      <div class="footer-sub">Montres Seiko Mod artisanales</div>
       <div class="footer-links">
         <span class="footer-link" onclick="showPage('home')">Accueil</span>
         <span class="footer-link" onclick="showPage('shop')">Boutique</span>
@@ -1031,7 +1084,7 @@ a{text-decoration:none;color:inherit}
             <div class="ch-title">🕐 Horaires de réponse</div>
             <div class="ch-row"><span>Lundi — Vendredi</span><span>9h → 20h</span></div>
             <div class="ch-row"><span>Week-end</span><span>10h → 18h</span></div>
-            <div class="ch-note">Réponse garantie sous 24h ouvrables</div>
+            <div class="ch-note">Réponse garantie sous 24/48h</div>
           </div>
         </div>
         <div class="contact-form-box">
@@ -1049,7 +1102,7 @@ a{text-decoration:none;color:inherit}
   <footer class="site-footer">
     <div class="footer-inner">
       <div class="footer-logo">Adri <em>Mods</em></div>
-      <div class="footer-sub">Montres Seiko Mod artisanales · Belgique</div>
+      <div class="footer-sub">Montres Seiko Mod artisanales</div>
       <div class="footer-links">
         <span class="footer-link" onclick="showPage('home')">Accueil</span>
         <span class="footer-link" onclick="showPage('shop')">Boutique</span>
