@@ -156,7 +156,7 @@ function renderFeatured() {
 }
 
 // ── RENDER MODEL TAGS ─────────────────────────────────────────────────────────
-const MODEL_TAGS = ['GMT-Master','Datejust','Submariner','Explorer','Daytona','Day-Date','Santos','Nautilus','Aquanaut','Royal Oak','Royal Oak Offshore','PRX'];
+const MODEL_TAGS = ['GMT-Master','Datejust','Submariner','Explorer','Daytona','Day-Date','Santos','Nautilus','Aquanaut','Royal Oak','PRX'];
 
 function renderModelTags() {
   const el = document.getElementById('model-tags'); if(!el) return;
@@ -170,13 +170,24 @@ window.setModelTag = function(tag) {
   renderModelTags();
   renderShop();
 };
+
+window.setCategory = function(c) {
+  activeCategory=c;
+  // Reset tag si on va sur accessoires
+  if(c==='accessories') activeModelTag='';
+  // Cache/affiche la ligne tags
+  const tagsBar=document.getElementById('shop-tags-bar');
+  if(tagsBar) tagsBar.style.display = c==='accessories' ? 'none' : 'block';
+  renderModelTags();
+  renderShop();
+};
 function renderShop() {
   let prods = [...allProducts];
   // Category filter
   if(activeCategory==='watches')     prods=prods.filter(p=>p.sid==='complete');
   else if(activeCategory==='accessories') prods=prods.filter(p=>p.sid==='accessoire');
-  // Model tag filter
-  if(activeModelTag) prods=prods.filter(p=>p.name.toLowerCase().includes(activeModelTag.toLowerCase()));
+  // Model tag filter — utilise le champ modelTag du catalogue
+  if(activeModelTag) prods=prods.filter(p=>p.modelTag===activeModelTag);
   // Price filter
   prods=prods.filter(p=>{ const v=parseFloat(p.price)||0; return v>=priceMin && v<=priceMax; });
   // Search
@@ -233,7 +244,6 @@ document.addEventListener('click', e => {
 });
 
 // ── FILTERS ───────────────────────────────────────────────────────────────────
-window.setCategory = function(c) { activeCategory=c; renderShop(); };
 window.setSort = function(v) { sortBy=v; renderShop(); };
 window.onPriceMinChange = function(v) { priceMin=parseInt(v); document.getElementById('price-min-slider').value=v; updatePriceDisplay(); renderShop(); };
 window.onPriceMaxChange = function(v) { priceMax=parseInt(v); document.getElementById('price-max-slider').value=v; updatePriceDisplay(); renderShop(); };
@@ -933,7 +943,7 @@ a{text-decoration:none;color:inherit}
       </div>
     </div>
     <!-- Ligne 2 : Tags modèles -->
-    <div class="shop-tags-bar">
+    <div class="shop-tags-bar" id="shop-tags-bar">
       <div class="shop-tags-inner">
         <div class="model-tags" id="model-tags"></div>
       </div>
