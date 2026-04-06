@@ -254,7 +254,24 @@ window.checkoutCart = function() {
 };
 
 // ── NAV ───────────────────────────────────────────────────────────────────────
-window.openSocial = function(url) { window.open(url,'_blank'); };
+// ── GALLERY ───────────────────────────────────────────────────────────────────
+function renderGallery() {
+  const el=document.getElementById('gallery-grid'); if(!el) return;
+  // Show all completed watches (published or not, just use published ones)
+  const items=allProducts.filter(p=>p.sid==='complete'&&p.img).sort((a,b)=>(b.ts||0)-(a.ts||0));
+  if(!items.length){el.innerHTML='<div class="no-products">Les réalisations arrivent bientôt !</div>';return;}
+  el.innerHTML=`<div class="gallery-masonry">${items.map(p=>`
+    <div class="gallery-card" onclick="openProduct('${p.id}')">
+      <div class="gallery-img-wrap"><img src="${p.img}" alt="${p.name}" loading="lazy"></div>
+      <div class="gallery-card-body">
+        <div class="gallery-card-name">${p.name}</div>
+        <div class="gallery-card-price">${p.stock==='vendu'?'<span class="sold-price">Vendu</span>':parseFloat(p.price).toFixed(2)+' €'}</div>
+      </div>
+    </div>`).join('')}</div>`;
+}
+
+window.showPage = function(page) {
+  document.body.style.overflow = '';
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.getElementById('page-'+page).classList.add('active');
   document.querySelectorAll('.nav-link').forEach(l=>l.classList.toggle('active',l.dataset.page===page));
@@ -544,6 +561,15 @@ a{text-decoration:none;color:inherit}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
 /* ── GALLERY ── */
+.gallery-masonry{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:20px}
+.gallery-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;cursor:pointer;transition:all .18s}
+.gallery-card:hover{border-color:var(--border2);box-shadow:0 8px 32px rgba(0,0,0,.1);transform:translateY(-3px)}
+.gallery-img-wrap{aspect-ratio:1;overflow:hidden;background:#f0ede8}
+.gallery-img-wrap img{width:100%;height:100%;object-fit:cover;transition:transform .4s}
+.gallery-card:hover .gallery-img-wrap img{transform:scale(1.05)}
+.gallery-card-body{padding:12px 14px;display:flex;align-items:center;justify-content:space-between}
+.gallery-card-name{font-size:13px;font-weight:600;color:var(--ink);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-right:8px}
+.gallery-card-price{font-family:'Playfair Display',serif;font-size:15px;color:var(--ink);flex-shrink:0}
 
 /* ── SHOP FILTERS INLINE ── */
 .shop-filters-inline{display:flex;align-items:center;gap:10px;margin-right:14px}
