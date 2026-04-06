@@ -7,18 +7,58 @@
 <meta name="description" content="Montres Seiko Mod artisanales et boîtes de voyage premium. Chaque mod est assemblé à la main en Belgique.">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+<script>
+// EmailJS config — hors du module pour accès global
+const EMAILJS_SVC = 'service_m0q9his';
+const EMAILJS_TPL = 'template_cs0qicg';
+const EMAILJS_KEY = 'Y5CoddsVS6RvfRcZN';
+emailjs.init(EMAILJS_KEY);
+
+window.sendContact = async function(e) {
+  e.preventDefault();
+  const btn=document.getElementById('cf-btn'); btn.textContent='Envoi…'; btn.disabled=true;
+  try {
+    await emailjs.send(EMAILJS_SVC, EMAILJS_TPL, {
+      from_name:  document.getElementById('c-name').value,
+      from_email: document.getElementById('c-email').value,
+      message:    document.getElementById('c-msg').value,
+    });
+    btn.textContent='Envoyé ✓'; btn.style.background='#2a7a4a';
+    document.getElementById('contact-form').reset();
+    setTimeout(()=>{btn.textContent='Envoyer';btn.style.background='';btn.disabled=false;},3000);
+  } catch(err) {
+    console.error('EmailJS error:', err);
+    btn.textContent='Erreur — réessayez'; btn.style.background='#c04040';
+    setTimeout(()=>{btn.textContent='Envoyer';btn.style.background='';btn.disabled=false;},3000);
+  }
+};
+
+window.sendCustomOrder = async function(e) {
+  e.preventDefault();
+  const btn=document.getElementById('co-btn'); btn.textContent='Envoi…'; btn.disabled=true;
+  try {
+    await emailjs.send(EMAILJS_SVC, EMAILJS_TPL, {
+      from_name:  document.getElementById('co-name').value,
+      from_email: document.getElementById('co-email').value,
+      message:    'COMMANDE SUR MESURE\nStyle: ' + document.getElementById('co-style').value + '\n\n' + document.getElementById('co-details').value,
+    });
+    btn.textContent='Envoyée ✓'; btn.style.background='#2a7a4a';
+    document.getElementById('custom-order-form').reset();
+    setTimeout(()=>{btn.textContent='Envoyer ma demande';btn.style.background='';btn.disabled=false;},3000);
+  } catch(err) {
+    console.error('EmailJS error:', err);
+    btn.textContent='Erreur — réessayez'; btn.style.background='#c04040';
+    setTimeout(()=>{btn.textContent='Envoyer ma demande';btn.style.background='';btn.disabled=false;},3000);
+  }
+};
+</script>
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
 import { getFirestore, collection, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
-const INSTAGRAM   = 'https://instagram.com/adrimods'; // ← ton lien Instagram
-const VINTED      = 'https://www.vinted.be'; // ← ton lien Vinted
-const EMAILJS_SVC = 'service_m0q9his';
-const EMAILJS_TPL = 'template_c11wvxl';
-const EMAILJS_KEY = 'Y5CoddsVS6RvfRcZN';
-const ABOUT_PHOTO = ''; // ← Colle ici ton lien Cloudinary pour la photo À propos
-
-emailjs.init(EMAILJS_KEY);
+const INSTAGRAM   = 'https://instagram.com/adrimods';
+const VINTED      = 'https://www.vinted.be';
+const ABOUT_PHOTO = '';
 
 const app = initializeApp({
   apiKey:"AIzaSyBXdDBq6H0ngwoCKDXN7iW9bcqJ5AVD7Wc",
@@ -279,28 +319,6 @@ window.showPage = function(page) {
   if(page==='shop') renderShop();
 };
 window.openSocial = function(url) { window.open(url,'_blank'); };
-
-// ── CONTACT ───────────────────────────────────────────────────────────────────
-window.sendContact = async function(e) {
-  e.preventDefault();
-  const btn=document.getElementById('cf-btn'); btn.textContent='Envoi…'; btn.disabled=true;
-  try {
-    await emailjs.send(EMAILJS_SVC,EMAILJS_TPL,{from_name:document.getElementById('c-name').value,from_email:document.getElementById('c-email').value,message:document.getElementById('c-msg').value});
-    btn.textContent='Envoyé ✓'; btn.style.background='#2a7a4a';
-    document.getElementById('contact-form').reset();
-    setTimeout(()=>{btn.textContent='Envoyer';btn.style.background='';btn.disabled=false;},3000);
-  } catch { btn.textContent='Erreur'; btn.style.background='#c04040'; setTimeout(()=>{btn.textContent='Envoyer';btn.style.background='';btn.disabled=false;},3000); }
-};
-window.sendCustomOrder = async function(e) {
-  e.preventDefault();
-  const btn=document.getElementById('co-btn'); btn.textContent='Envoi…'; btn.disabled=true;
-  try {
-    await emailjs.send(EMAILJS_SVC,EMAILJS_TPL,{from_name:document.getElementById('co-name').value,from_email:document.getElementById('co-email').value,message:`COMMANDE SUR MESURE\nStyle: ${document.getElementById('co-style').value}\n\n${document.getElementById('co-details').value}`});
-    btn.textContent='Envoyée ✓'; btn.style.background='#2a7a4a';
-    document.getElementById('custom-order-form').reset();
-    setTimeout(()=>{btn.textContent='Envoyer ma demande';btn.style.background='';btn.disabled=false;},3000);
-  } catch { btn.textContent='Erreur'; btn.style.background='#c04040'; setTimeout(()=>{btn.textContent='Envoyer ma demande';btn.style.background='';btn.disabled=false;},3000); }
-};
 
 // ── TOAST ─────────────────────────────────────────────────────────────────────
 function showToast(msg) {
