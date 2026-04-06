@@ -156,27 +156,17 @@ function renderFeatured() {
 }
 
 // ── RENDER MODEL TAGS ─────────────────────────────────────────────────────────
+const MODEL_TAGS = ['GMT-Master','Datejust','Submariner','Explorer','Daytona','Day-Date','Santos','Nautilus','Aquanaut','Royal Oak','Royal Oak Offshore','PRX'];
+
 function renderModelTags() {
   const el = document.getElementById('model-tags'); if(!el) return;
-  // Extrait les mots-clés uniques des noms de produits (montres seulement)
-  const watches = allProducts.filter(p=>p.sid==='complete');
-  const keywords = new Set();
-  watches.forEach(p=>{
-    // Extrait mots significatifs (plus de 3 lettres, pas "Seiko" ni "Mod")
-    const words = p.name.replace(/ - Seiko Mod/gi,'').split(/\s+/);
-    words.forEach(w=>{
-      const clean = w.replace(/[^a-zA-ZÀ-ÿ]/g,'');
-      if(clean.length > 3 && !['Seiko','Mod','Silver','Cadran','Bracelet','Black'].includes(clean)) keywords.add(clean);
-    });
-  });
-  if(!keywords.size){el.innerHTML='';return;}
-  el.innerHTML = [...keywords].sort().map(k=>
-    `<button class="model-tag${activeModelTag===k?' active':''}" onclick="setModelTag('${k}')">${k}</button>`
+  el.innerHTML = MODEL_TAGS.map(t=>
+    `<button class="model-tag${activeModelTag===t?' active':''}" onclick="setModelTag('${t.replace(/'/g,"\\'")}')">${t}</button>`
   ).join('');
 }
 
 window.setModelTag = function(tag) {
-  activeModelTag = activeModelTag===tag ? '' : tag; // toggle
+  activeModelTag = activeModelTag===tag ? '' : tag;
   renderModelTags();
   renderShop();
 };
@@ -395,6 +385,7 @@ document.addEventListener('click',e=>{
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeProductModal();closeCart();}});
 
 document.addEventListener('DOMContentLoaded', function() {
+  renderModelTags();
   const img=document.getElementById('about-img-el');
   if(img&&ABOUT_PHOTO){img.src=ABOUT_PHOTO;img.style.display='block';document.getElementById('about-icon-fallback').style.display='none';}
 });
