@@ -533,7 +533,8 @@ window.removeCfgPhoto = function() {
 };
 
 // Init configurator on page load
-document.addEventListener('DOMContentLoaded', cfgInit);
+document.addEventListener('DOMContentLoaded', function() {
+  cfgInit();
   const img=document.getElementById('about-img-el');
   if(img&&ABOUT_PHOTO){img.src=ABOUT_PHOTO;img.style.display='block';document.getElementById('about-icon-fallback').style.display='none';}
 });
