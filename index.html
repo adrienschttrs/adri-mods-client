@@ -33,28 +33,6 @@ window.sendContact = async function(e) {
   }
 };
 
-window.sendCustomOrder = async function(e) {
-  e.preventDefault();
-  const btn=document.getElementById('co-btn'); btn.textContent='Envoi…'; btn.disabled=true;
-  try {
-    const photoUrl = window._uploadedPhotoUrl || '';
-    const photoLine = photoUrl ? '\n\nPhoto de référence : ' + photoUrl : '';
-    await emailjs.send(EMAILJS_SVC, EMAILJS_TPL, {
-      from_name:  document.getElementById('co-name').value,
-      from_email: document.getElementById('co-email').value,
-      message:    'COMMANDE SUR MESURE\nStyle: ' + document.getElementById('co-style').value + '\n\n' + document.getElementById('co-details').value + photoLine,
-    });
-    btn.textContent='Envoyée ✓'; btn.style.background='#2a7a4a';
-    document.getElementById('custom-order-form').reset();
-    removePhoto();
-    setTimeout(()=>{btn.textContent='Envoyer ma demande';btn.style.background='';btn.disabled=false;},3000);
-  } catch(err) {
-    console.error('EmailJS error:', err);
-    btn.textContent='Erreur — réessayez'; btn.style.background='#c04040';
-    setTimeout(()=>{btn.textContent='Envoyer ma demande';btn.style.background='';btn.disabled=false;},3000);
-  }
-};
-
 window._uploadedPhotoUrl = '';
 
 window.handlePhotoUpload = async function(input) {
@@ -391,18 +369,18 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeProductModal()
 // ── CONFIGURATOR ──────────────────────────────────────────────────────────────
 // ⚠️  Pour changer une photo : upload sur Cloudinary → remplace l'URL dans img:
 const CFG_STYLES = [
-  { id:'gmt',        name:'GMT Master',        img:'https://res.cloudinary.com/dsdbkj5nf/image/upload/v1/seiko-mod/gmt.jpg',        finishes:['Argent','Bicolore','Noir'],         sizes:['36mm','39mm','41mm'],           dials:['Noir','Bleu','Vert','Rouge'],           straps:['Jubilée Acier','Oyster Acier','Rubber'] },
-  { id:'datejust',   name:'Datejust',          img:'https://res.cloudinary.com/dsdbkj5nf/image/upload/v1/seiko-mod/datejust.jpg',   finishes:['Argent','Or','Bicolore'],           sizes:['36mm','39mm','41mm'],           dials:['Blanc','Noir','Gris','Vert','Bleu'],    straps:['Jubilée Acier','Oyster Acier','Cuir'] },
-  { id:'submariner', name:'Submariner',        img:'https://res.cloudinary.com/dsdbkj5nf/image/upload/v1/seiko-mod/submariner.jpg', finishes:['Argent','Or','Noir'],               sizes:['39mm','41mm','44mm'],           dials:['Noir','Bleu','Vert'],                   straps:['Oyster Acier','Rubber'] },
-  { id:'explorer',   name:'Explorer',          img:'https://res.cloudinary.com/dsdbkj5nf/image/upload/v1/seiko-mod/explorer.jpg',   finishes:['Argent'],                          sizes:['36mm','39mm'],                 dials:['Noir','Blanc'],                         straps:['Oyster Acier','Cuir'] },
-  { id:'daytona',    name:'Daytona',           img:'https://res.cloudinary.com/dsdbkj5nf/image/upload/v1/seiko-mod/daytona.jpg',    finishes:['Argent','Or','Bicolore'],           sizes:['39mm','41mm'],                 dials:['Blanc','Noir','Bleu'],                  straps:['Oyster Acier','Rubber'] },
-  { id:'santos',     name:'Santos',            img:'https://res.cloudinary.com/dsdbkj5nf/image/upload/v1/seiko-mod/santos.jpg',     finishes:['Argent','Or','Bicolore'],           sizes:['36mm','39mm','41mm'],           dials:['Blanc','Noir','Bleu'],                  straps:['Acier Santos','Cuir'] },
-  { id:'nautilus',   name:'Nautilus',          img:'https://res.cloudinary.com/dsdbkj5nf/image/upload/v1/seiko-mod/nautilus.jpg',   finishes:['Argent','Or','Bicolore'],           sizes:['39mm','41mm'],                 dials:['Bleu','Noir','Vert','Blanc'],           straps:['Intégré Acier','Rubber'] },
-  { id:'aquanaut',   name:'Aquanaut',          img:'https://res.cloudinary.com/dsdbkj5nf/image/upload/v1/seiko-mod/aquanaut.jpg',   finishes:['Argent','Or Rose','Bicolore'],      sizes:['39mm','41mm'],                 dials:['Marron','Bleu','Noir','Vert'],          straps:['Rubber Tropical','Acier'] },
-  { id:'royaloak',   name:'Royal Oak',         img:'https://res.cloudinary.com/dsdbkj5nf/image/upload/v1/seiko-mod/royaloak.jpg',   finishes:['Argent','Or','Noir'],               sizes:['39mm','41mm','44mm'],           dials:['Bleu','Noir','Gris','Vert'],            straps:['Intégré Acier','Rubber'] },
-  { id:'roo',        name:'Royal Oak Offshore',img:'https://res.cloudinary.com/dsdbkj5nf/image/upload/v1/seiko-mod/roo.jpg',        finishes:['Argent','Noir','Or'],               sizes:['41mm','44mm'],                 dials:['Vert','Noir','Bleu','Orange'],          straps:['Rubber','Intégré Acier'] },
-  { id:'prx',        name:'PRX',               img:'https://res.cloudinary.com/dsdbkj5nf/image/upload/v1/seiko-mod/prx.jpg',        finishes:['Argent','Or','Bicolore'],           sizes:['35mm','39mm','40mm'],           dials:['Bleu Glacier','Noir','Blanc','Vert'],   straps:['Intégré Acier','Cuir'] },
-  { id:'daydate',    name:'Day-Date',          img:'https://res.cloudinary.com/dsdbkj5nf/image/upload/v1/seiko-mod/daydate.jpg',    finishes:['Or','Or Rose','Argent'],            sizes:['36mm','40mm'],                 dials:['Vert','Noir','Champagne','Bleu'],       straps:['Président Acier','Jubilée Acier'] },
+  { id:'gmt',        name:'GMT Master',         img:'/images/gmt.png',        fallback:'#1a2a3a',  finishes:['Argent','Bicolore','Noir'],         sizes:['36mm','39mm','41mm'],     dials:['Noir','Bleu','Vert','Rouge'],        straps:['Jubilée Acier','Oyster Acier','Rubber'] },
+  { id:'datejust',   name:'Datejust',           img:'/images/datejust.png',   fallback:'#2a2a2a',  finishes:['Argent','Or','Bicolore'],           sizes:['36mm','39mm','41mm'],     dials:['Blanc','Noir','Gris','Vert','Bleu'], straps:['Jubilée Acier','Oyster Acier','Cuir'] },
+  { id:'submariner', name:'Submariner',         img:'/images/submariner.png', fallback:'#0a1a2a',  finishes:['Argent','Or','Noir'],               sizes:['39mm','41mm','44mm'],     dials:['Noir','Bleu','Vert'],                straps:['Oyster Acier','Rubber'] },
+  { id:'explorer',   name:'Explorer',           img:'/images/explorer.png',   fallback:'#1a1a1a',  finishes:['Argent'],                          sizes:['36mm','39mm'],           dials:['Noir','Blanc'],                     straps:['Oyster Acier','Cuir'] },
+  { id:'daytona',    name:'Daytona',            img:'/images/daytona.png',    fallback:'#2a2a2a',  finishes:['Argent','Or','Bicolore'],           sizes:['39mm','41mm'],           dials:['Blanc','Noir','Bleu'],               straps:['Oyster Acier','Rubber'] },
+  { id:'santos',     name:'Santos',             img:'/images/santos.png',     fallback:'#2a2e36',  finishes:['Argent','Or','Bicolore'],           sizes:['36mm','39mm','41mm'],     dials:['Blanc','Noir','Bleu'],               straps:['Acier Santos','Cuir'] },
+  { id:'nautilus',   name:'Nautilus',           img:'/images/nautilus.png',   fallback:'#1a2030',  finishes:['Argent','Or','Bicolore'],           sizes:['39mm','41mm'],           dials:['Bleu','Noir','Vert','Blanc'],        straps:['Intégré Acier','Rubber'] },
+  { id:'aquanaut',   name:'Aquanaut',           img:'/images/aquanaut.png',   fallback:'#2a1a10',  finishes:['Argent','Or Rose','Bicolore'],      sizes:['39mm','41mm'],           dials:['Marron','Bleu','Noir','Vert'],       straps:['Rubber Tropical','Acier'] },
+  { id:'royaloak',   name:'Royal Oak',          img:'/images/royaloak.png',   fallback:'#1a2030',  finishes:['Argent','Or','Noir'],               sizes:['39mm','41mm','44mm'],     dials:['Bleu','Noir','Gris','Vert'],         straps:['Intégré Acier','Rubber'] },
+  { id:'roo',        name:'Royal Oak Offshore', img:'/images/roo.png',        fallback:'#1a2a1a',  finishes:['Argent','Noir','Or'],               sizes:['41mm','44mm'],           dials:['Vert','Noir','Bleu','Orange'],       straps:['Rubber','Intégré Acier'] },
+  { id:'prx',        name:'PRX',                img:'/images/prx.png',        fallback:'#2a3040',  finishes:['Argent','Or','Bicolore'],           sizes:['35mm','39mm','40mm'],     dials:['Bleu Glacier','Noir','Blanc','Vert'],straps:['Intégré Acier','Cuir'] },
+  { id:'daydate',    name:'Day-Date',           img:'/images/daydate.png',    fallback:'#3a2010',  finishes:['Or','Or Rose','Argent'],            sizes:['36mm','40mm'],           dials:['Vert','Noir','Champagne','Bleu'],    straps:['Président Acier','Jubilée Acier'] },
 ];
 
 let cfgSelected = { style:null, finish:null, size:null, dial:null, strap:null };
