@@ -388,8 +388,152 @@ document.addEventListener('click',e=>{
 });
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeProductModal();closeCart();}});
 
-// About photo
-document.addEventListener('DOMContentLoaded',()=>{
+// ── CONFIGURATOR ──────────────────────────────────────────────────────────────
+// ⚠️  Pour changer une photo : upload sur Cloudinary → remplace l'URL dans img:
+const CFG_STYLES = [
+  { id:'gmt',        name:'GMT Master',        img:'https://res.cloudinary.com/dsdbkj5nf/image/upload/v1/seiko-mod/gmt.jpg',        finishes:['Argent','Bicolore','Noir'],         sizes:['36mm','39mm','41mm'],           dials:['Noir','Bleu','Vert','Rouge'],           straps:['Jubilée Acier','Oyster Acier','Rubber'] },
+  { id:'datejust',   name:'Datejust',          img:'https://res.cloudinary.com/dsdbkj5nf/image/upload/v1/seiko-mod/datejust.jpg',   finishes:['Argent','Or','Bicolore'],           sizes:['36mm','39mm','41mm'],           dials:['Blanc','Noir','Gris','Vert','Bleu'],    straps:['Jubilée Acier','Oyster Acier','Cuir'] },
+  { id:'submariner', name:'Submariner',        img:'https://res.cloudinary.com/dsdbkj5nf/image/upload/v1/seiko-mod/submariner.jpg', finishes:['Argent','Or','Noir'],               sizes:['39mm','41mm','44mm'],           dials:['Noir','Bleu','Vert'],                   straps:['Oyster Acier','Rubber'] },
+  { id:'explorer',   name:'Explorer',          img:'https://res.cloudinary.com/dsdbkj5nf/image/upload/v1/seiko-mod/explorer.jpg',   finishes:['Argent'],                          sizes:['36mm','39mm'],                 dials:['Noir','Blanc'],                         straps:['Oyster Acier','Cuir'] },
+  { id:'daytona',    name:'Daytona',           img:'https://res.cloudinary.com/dsdbkj5nf/image/upload/v1/seiko-mod/daytona.jpg',    finishes:['Argent','Or','Bicolore'],           sizes:['39mm','41mm'],                 dials:['Blanc','Noir','Bleu'],                  straps:['Oyster Acier','Rubber'] },
+  { id:'santos',     name:'Santos',            img:'https://res.cloudinary.com/dsdbkj5nf/image/upload/v1/seiko-mod/santos.jpg',     finishes:['Argent','Or','Bicolore'],           sizes:['36mm','39mm','41mm'],           dials:['Blanc','Noir','Bleu'],                  straps:['Acier Santos','Cuir'] },
+  { id:'nautilus',   name:'Nautilus',          img:'https://res.cloudinary.com/dsdbkj5nf/image/upload/v1/seiko-mod/nautilus.jpg',   finishes:['Argent','Or','Bicolore'],           sizes:['39mm','41mm'],                 dials:['Bleu','Noir','Vert','Blanc'],           straps:['Intégré Acier','Rubber'] },
+  { id:'aquanaut',   name:'Aquanaut',          img:'https://res.cloudinary.com/dsdbkj5nf/image/upload/v1/seiko-mod/aquanaut.jpg',   finishes:['Argent','Or Rose','Bicolore'],      sizes:['39mm','41mm'],                 dials:['Marron','Bleu','Noir','Vert'],          straps:['Rubber Tropical','Acier'] },
+  { id:'royaloak',   name:'Royal Oak',         img:'https://res.cloudinary.com/dsdbkj5nf/image/upload/v1/seiko-mod/royaloak.jpg',   finishes:['Argent','Or','Noir'],               sizes:['39mm','41mm','44mm'],           dials:['Bleu','Noir','Gris','Vert'],            straps:['Intégré Acier','Rubber'] },
+  { id:'roo',        name:'Royal Oak Offshore',img:'https://res.cloudinary.com/dsdbkj5nf/image/upload/v1/seiko-mod/roo.jpg',        finishes:['Argent','Noir','Or'],               sizes:['41mm','44mm'],                 dials:['Vert','Noir','Bleu','Orange'],          straps:['Rubber','Intégré Acier'] },
+  { id:'prx',        name:'PRX',               img:'https://res.cloudinary.com/dsdbkj5nf/image/upload/v1/seiko-mod/prx.jpg',        finishes:['Argent','Or','Bicolore'],           sizes:['35mm','39mm','40mm'],           dials:['Bleu Glacier','Noir','Blanc','Vert'],   straps:['Intégré Acier','Cuir'] },
+  { id:'daydate',    name:'Day-Date',          img:'https://res.cloudinary.com/dsdbkj5nf/image/upload/v1/seiko-mod/daydate.jpg',    finishes:['Or','Or Rose','Argent'],            sizes:['36mm','40mm'],                 dials:['Vert','Noir','Champagne','Bleu'],       straps:['Président Acier','Jubilée Acier'] },
+];
+
+let cfgSelected = { style:null, finish:null, size:null, dial:null, strap:null };
+let cfgPhotoUrl = '';
+
+function cfgInit() {
+  const grid = document.getElementById('cfg-style-grid');
+  if(!grid) return;
+  grid.innerHTML = CFG_STYLES.map(s=>`
+    <div class="cfg-style-card" onclick="cfgSelectStyle('${s.id}')">
+      <div class="cfg-style-img-wrap">
+        <img src="${s.img}" alt="${s.name}" loading="lazy" onerror="this.parentElement.innerHTML='<div class=cfg-img-placeholder>${s.name.charAt(0)}</div>'">
+      </div>
+      <div class="cfg-style-label">${s.name}</div>
+      <div class="cfg-style-price">189,90 €</div>
+    </div>`).join('');
+}
+
+window.cfgSelectStyle = function(id) {
+  const s = CFG_STYLES.find(x=>x.id===id); if(!s) return;
+  cfgSelected = { style:s, finish:s.finishes[0], size:s.sizes[0], dial:s.dials[0], strap:s.straps[0] };
+  document.getElementById('cfg-style-name').textContent = s.name;
+  document.getElementById('cfg-preview-img').src = s.img;
+  document.getElementById('cfg-preview-img').onerror = function(){ this.parentElement.innerHTML='<div class="cfg-img-placeholder">'+s.name.charAt(0)+'</div>'; };
+  document.getElementById('cfg-preview-label').textContent = s.name + ' · 189,90 €';
+  cfgRenderChips('cfg-finish-chips', s.finishes, 'finish');
+  cfgRenderChips('cfg-size-chips',   s.sizes,    'size');
+  cfgRenderChips('cfg-dial-chips',   s.dials,    'dial');
+  cfgRenderChips('cfg-strap-chips',  s.straps,   'strap');
+  document.getElementById('cfg-step-0').style.display='none';
+  document.getElementById('cfg-step-1').style.display='block';
+  window.scrollTo({top:0,behavior:'smooth'});
+};
+
+function cfgRenderChips(containerId, options, key) {
+  document.getElementById(containerId).innerHTML = options.map(o=>`
+    <button class="cfg-chip${cfgSelected[key]===o?' active':''}" onclick="cfgPick('${key}','${o}',this)">${o}</button>`).join('');
+}
+
+window.cfgPick = function(key, val, btn) {
+  cfgSelected[key] = val;
+  btn.closest('.cfg-chips').querySelectorAll('.cfg-chip').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+};
+
+window.cfgBack = function() {
+  document.getElementById('cfg-step-1').style.display='none';
+  document.getElementById('cfg-step-0').style.display='block';
+  window.scrollTo({top:0,behavior:'smooth'});
+};
+
+window.cfgBackToOptions = function() {
+  document.getElementById('cfg-step-2').style.display='none';
+  document.getElementById('cfg-step-1').style.display='block';
+  window.scrollTo({top:0,behavior:'smooth'});
+};
+
+window.cfgOrder = function() {
+  const s = cfgSelected;
+  document.getElementById('cfg-recap').innerHTML=`
+    <div class="cfg-recap-card">
+      <img src="${s.style.img}" class="cfg-recap-img" onerror="this.style.display='none'">
+      <div class="cfg-recap-details">
+        <div class="cfg-recap-title">${s.style.name}</div>
+        <div class="cfg-recap-row"><span>Finition</span><span>${s.finish}</span></div>
+        <div class="cfg-recap-row"><span>Taille</span><span>${s.size}</span></div>
+        <div class="cfg-recap-row"><span>Cadran</span><span>${s.dial}</span></div>
+        <div class="cfg-recap-row"><span>Bracelet</span><span>${s.strap}</span></div>
+        <div class="cfg-recap-total">189,90 €</div>
+      </div>
+    </div>`;
+  document.getElementById('cfg-step-1').style.display='none';
+  document.getElementById('cfg-step-2').style.display='block';
+  window.scrollTo({top:0,behavior:'smooth'});
+};
+
+window.cfgSend = async function(e) {
+  e.preventDefault();
+  const btn = document.getElementById('cfg-submit-btn');
+  btn.textContent='Envoi…'; btn.disabled=true;
+  const s = cfgSelected;
+  const photoLine = cfgPhotoUrl ? '\n\nPhoto de référence : '+cfgPhotoUrl : '';
+  const msg = `CONFIGURATEUR — COMMANDE SUR MESURE\n\nStyle : ${s.style.name}\nFinition : ${s.finish}\nTaille : ${s.size}\nCadran : ${s.dial}\nBracelet : ${s.strap}\nPrix : 189,90 €\n\nMessage client :\n${document.getElementById('cfg-msg').value||'Aucun'}${photoLine}`;
+  try {
+    await emailjs.send(EMAILJS_SVC, EMAILJS_TPL, {
+      from_name:  document.getElementById('cfg-name').value,
+      from_email: document.getElementById('cfg-email').value,
+      message:    msg,
+    });
+    btn.textContent='Commande envoyée ✓'; btn.style.background='#2a7a4a';
+    document.getElementById('cfg-form').reset();
+    removeCfgPhoto();
+    setTimeout(()=>{
+      btn.textContent='Envoyer ma commande'; btn.style.background=''; btn.disabled=false;
+      document.getElementById('cfg-step-2').style.display='none';
+      document.getElementById('cfg-step-0').style.display='block';
+    },3000);
+  } catch(err) {
+    btn.textContent='Erreur — réessayez'; btn.style.background='#c04040';
+    setTimeout(()=>{btn.textContent='Envoyer ma commande';btn.style.background='';btn.disabled=false;},3000);
+  }
+};
+
+window.handleCfgPhoto = async function(input) {
+  const file=input.files[0]; if(!file) return;
+  const lbl=document.getElementById('cfg-photo-label');
+  lbl.textContent='Upload en cours…';
+  try {
+    const fd=new FormData(); fd.append('image',file);
+    const res=await fetch('https://api.imgur.com/3/image',{method:'POST',headers:{Authorization:'Client-ID 546c25a59c58ad7'},body:fd});
+    const data=await res.json();
+    if(data.success){
+      cfgPhotoUrl=data.data.link;
+      document.getElementById('cfg-photo-preview').src=data.data.link;
+      document.getElementById('cfg-photo-preview-wrap').style.display='block';
+      lbl.textContent='✓ Photo ajoutée';
+      document.getElementById('cfg-photo-zone').style.borderColor='#2a7a4a';
+    } else throw new Error();
+  } catch { lbl.textContent='Erreur — réessayez'; }
+};
+
+window.removeCfgPhoto = function() {
+  cfgPhotoUrl='';
+  document.getElementById('cfg-photo-inp').value='';
+  document.getElementById('cfg-photo-preview-wrap').style.display='none';
+  document.getElementById('cfg-photo-label').textContent='Cliquer pour ajouter une photo';
+  document.getElementById('cfg-photo-zone').style.borderColor='';
+};
+
+// Init configurator on page load
+document.addEventListener('DOMContentLoaded', cfgInit);
   const img=document.getElementById('about-img-el');
   if(img&&ABOUT_PHOTO){img.src=ABOUT_PHOTO;img.style.display='block';document.getElementById('about-icon-fallback').style.display='none';}
 });
@@ -682,7 +826,58 @@ a{text-decoration:none;color:inherit}
 .mobile-nav-link:hover{background:var(--bg)}
 .mobile-nav-instagram{display:flex;align-items:center;gap:8px;width:100%;padding:12px 14px;background:var(--ink);color:#fff;border:none;border-radius:var(--r-sm);font-size:14px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;margin-top:6px}
 
-/* ── RESPONSIVE ── */
+/* ── CONFIGURATEUR ── */
+.cfg-hero{background:var(--ink);color:#fff;padding:56px 24px 40px;text-align:center;position:relative;overflow:hidden}
+.cfg-hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 60% 40%,rgba(184,148,30,.15) 0%,transparent 60%);pointer-events:none}
+.cfg-hero-title{font-family:'Playfair Display',serif;font-size:clamp(28px,5vw,48px);font-weight:500;color:#fff;line-height:1.1;margin-bottom:10px;position:relative}
+.cfg-hero-sub{font-size:15px;color:rgba(255,255,255,.6);position:relative}
+.cfg-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:20px;padding:32px 24px;max-width:1200px;margin:0 auto}
+.cfg-style-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;cursor:pointer;transition:all .18s;text-align:center}
+.cfg-style-card:hover{border-color:var(--ink);box-shadow:0 8px 32px rgba(0,0,0,.12);transform:translateY(-3px)}
+.cfg-style-img-wrap{aspect-ratio:1;overflow:hidden;background:#f5f3f0;display:flex;align-items:center;justify-content:center}
+.cfg-style-img-wrap img{width:100%;height:100%;object-fit:cover;transition:transform .4s}
+.cfg-style-card:hover .cfg-style-img-wrap img{transform:scale(1.05)}
+.cfg-img-placeholder{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:56px;color:var(--border2);background:#f5f3f0}
+.cfg-style-label{font-family:'Playfair Display',serif;font-size:16px;font-weight:500;color:var(--ink);padding:12px 12px 4px}
+.cfg-style-price{font-family:'DM Mono',monospace;font-size:13px;color:var(--gold);padding-bottom:14px}
+.cfg-top-bar{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:64px;z-index:40}
+.cfg-back-btn{padding:7px 14px;border:1px solid var(--border);border-radius:var(--r-sm);background:transparent;font-size:13px;font-family:'Inter',sans-serif;cursor:pointer;color:var(--ink2);transition:all .14s}
+.cfg-back-btn:hover{border-color:var(--ink);color:var(--ink)}
+.cfg-step-title{font-family:'Playfair Display',serif;font-size:18px;font-weight:500;color:var(--ink)}
+.cfg-price-tag{font-family:'Playfair Display',serif;font-size:20px;font-weight:500;color:var(--ink)}
+.cfg-layout{display:grid;grid-template-columns:1fr 1fr;gap:0;max-width:1100px;margin:0 auto;padding:32px 24px;gap:40px}
+.cfg-preview{position:sticky;top:120px;align-self:start}
+.cfg-preview img{width:100%;border-radius:var(--r);aspect-ratio:1;object-fit:cover;background:#f5f3f0}
+.cfg-preview-label{text-align:center;font-family:'Playfair Display',serif;font-size:15px;color:var(--ink2);margin-top:10px}
+.cfg-options{display:flex;flex-direction:column;gap:24px}
+.cfg-option-group{}
+.cfg-option-title{font-size:11px;font-weight:700;color:var(--ink2);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px}
+.cfg-chips{display:flex;flex-wrap:wrap;gap:8px}
+.cfg-chip{padding:8px 16px;border:1.5px solid var(--border);border-radius:20px;font-size:13px;font-weight:500;cursor:pointer;background:transparent;color:var(--ink2);transition:all .14s;font-family:'Inter',sans-serif}
+.cfg-chip:hover{border-color:var(--ink);color:var(--ink)}
+.cfg-chip.active{border-color:var(--ink);background:var(--ink);color:#fff}
+.cfg-cta-btn{width:100%;padding:15px;background:var(--ink);color:#fff;border:none;border-radius:var(--r-sm);font-size:15px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;transition:background .14s;margin-top:8px}
+.cfg-cta-btn:hover{background:#333}
+.cfg-cta-note{text-align:center;font-size:12px;color:var(--ink3);margin-top:8px}
+.cfg-contact-layout{display:grid;grid-template-columns:1fr 1fr;gap:40px;max-width:1000px;margin:0 auto;padding:32px 24px}
+.cfg-recap-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;position:sticky;top:120px}
+.cfg-recap-img{width:100%;aspect-ratio:1;object-fit:cover;background:#f5f3f0}
+.cfg-recap-details{padding:16px 18px}
+.cfg-recap-title{font-family:'Playfair Display',serif;font-size:20px;font-weight:500;margin-bottom:14px;color:var(--ink)}
+.cfg-recap-row{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);font-size:13px}
+.cfg-recap-row span:first-child{color:var(--ink2)}
+.cfg-recap-row span:last-child{font-weight:500;color:var(--ink)}
+.cfg-recap-total{font-family:'Playfair Display',serif;font-size:22px;font-weight:500;color:var(--ink);text-align:right;margin-top:14px}
+
+/* Responsive configurateur */
+@media(max-width:768px){
+  .cfg-layout,.cfg-contact-layout{grid-template-columns:1fr;gap:24px}
+  .cfg-preview{position:static}
+  .cfg-grid{grid-template-columns:repeat(2,1fr);gap:12px;padding:16px}
+  .cfg-style-label{font-size:13px}
+  .cfg-top-bar{top:58px}
+  .cfg-recap-card{position:static}
+}
 
 /* Tablette */
 @media(max-width:1024px){
@@ -951,54 +1146,85 @@ a{text-decoration:none;color:inherit}
 <!-- ══ SUR MESURE ══ -->
 <div class="page" id="page-custom">
   <div class="page-content">
-    <div class="section">
-      <div class="section-hdr">
-        <div class="section-eyebrow">Sur mesure</div>
-        <h2 class="section-title">Votre montre, vos envies</h2>
-        <p class="section-sub">Vous avez une idée précise ? Décrivez-nous ce que vous souhaitez et nous créons votre montre unique.</p>
+
+    <!-- STEP 0 : Style selection -->
+    <div id="cfg-step-0">
+      <div class="cfg-hero">
+        <div class="section-eyebrow" style="color:rgba(255,255,255,.5);margin-bottom:10px">Configurateur</div>
+        <h1 class="cfg-hero-title">Choisissez votre style</h1>
+        <p class="cfg-hero-sub">189,90 € · Assemblé sur mesure · Livraison Europe</p>
       </div>
-      <div class="custom-grid">
-        <div class="custom-info">
-          <h3>Ce que nous pouvons faire</h3>
-          <p>Chaque mod est assemblé sur mesure. Vous choisissez le style, la taille, les couleurs — nous nous chargeons du reste.</p>
-          <div class="custom-examples">
-            <div class="custom-example"><span class="custom-example-icon">🎨</span><div class="custom-example-text">Style et coloris personnalisés selon vos préférences</div></div>
-            <div class="custom-example"><span class="custom-example-icon">📏</span><div class="custom-example-text">Taille adaptée selon votre poignet (de 36mm à 44mm)</div></div>
-            <div class="custom-example"><span class="custom-example-icon">⚙️</span><div class="custom-example-text">Choix du mouvement (automatique NH ou chronographe VK)</div></div>
-            <div class="custom-example"><span class="custom-example-icon">💎</span><div class="custom-example-text">Finitions premium : ton or, ton argent, bicolore</div></div>
-          </div>
+      <div class="cfg-grid" id="cfg-style-grid"></div>
+    </div>
+
+    <!-- STEP 1 : Options -->
+    <div id="cfg-step-1" style="display:none">
+      <div class="cfg-top-bar">
+        <button class="cfg-back-btn" onclick="cfgBack()">← Retour</button>
+        <div class="cfg-step-title" id="cfg-style-name"></div>
+        <div class="cfg-price-tag">189,90 €</div>
+      </div>
+      <div class="cfg-layout">
+        <div class="cfg-preview">
+          <img id="cfg-preview-img" src="" alt="">
+          <div class="cfg-preview-label" id="cfg-preview-label"></div>
         </div>
+        <div class="cfg-options">
+          <div class="cfg-option-group">
+            <div class="cfg-option-title">Finition</div>
+            <div class="cfg-chips" id="cfg-finish-chips"></div>
+          </div>
+          <div class="cfg-option-group">
+            <div class="cfg-option-title">Taille</div>
+            <div class="cfg-chips" id="cfg-size-chips"></div>
+          </div>
+          <div class="cfg-option-group">
+            <div class="cfg-option-title">Couleur du cadran</div>
+            <div class="cfg-chips" id="cfg-dial-chips"></div>
+          </div>
+          <div class="cfg-option-group">
+            <div class="cfg-option-title">Bracelet</div>
+            <div class="cfg-chips" id="cfg-strap-chips"></div>
+          </div>
+          <button class="cfg-cta-btn" onclick="cfgOrder()">Commander ce mod — 189,90 €</button>
+          <p class="cfg-cta-note">Vous recevrez une confirmation sous 24/48h</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 2 : Contact -->
+    <div id="cfg-step-2" style="display:none">
+      <div class="cfg-top-bar">
+        <button class="cfg-back-btn" onclick="cfgBackToOptions()">← Modifier</button>
+        <div class="cfg-step-title">Finaliser la commande</div>
+        <div class="cfg-price-tag">189,90 €</div>
+      </div>
+      <div class="cfg-contact-layout">
+        <div class="cfg-recap" id="cfg-recap"></div>
         <div class="contact-form-box">
-          <h3>Décrivez votre projet</h3>
-          <form id="custom-order-form" onsubmit="sendCustomOrder(event)">
-            <div class="cf-group"><label>Votre nom</label><input type="text" id="co-name" placeholder="Jean Dupont" required></div>
-            <div class="cf-group"><label>Email</label><input type="email" id="co-email" placeholder="jean@email.com" required></div>
-            <div class="cf-group"><label>Style souhaité</label>
-              <select id="co-style">
-                <option value="">— Choisir un style —</option>
-                <option>Style Datejust</option><option>Style GMT</option><option>Style Submariner</option>
-                <option>Style Nautilus</option><option>Style Royal Oak</option><option>Style Santos</option>
-                <option>Autre / Je ne sais pas encore</option>
-              </select>
-            </div>
-            <div class="cf-group"><label>Détails de votre demande</label><textarea id="co-details" placeholder="Décrivez votre idée : couleurs, taille, cadran, bracelet, occasion…" required></textarea></div>
+          <h3>Vos coordonnées</h3>
+          <form id="cfg-form" onsubmit="cfgSend(event)">
+            <div class="cf-group"><label>Votre nom</label><input type="text" id="cfg-name" placeholder="Jean Dupont" required></div>
+            <div class="cf-group"><label>Email</label><input type="email" id="cfg-email" placeholder="jean@email.com" required></div>
+            <div class="cf-group"><label>Message / précisions <span style="font-weight:400;color:var(--ink3)">(optionnel)</span></label><textarea id="cfg-msg" placeholder="Précisions supplémentaires…"></textarea></div>
             <div class="cf-group">
               <label>Photo de référence <span style="font-weight:400;color:var(--ink3)">(optionnel)</span></label>
-              <div class="photo-upload-zone" id="photo-upload-zone" onclick="document.getElementById('co-photo').click()">
-                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="12" cy="12" r="3"/><path d="M3 9l3-3h3l2-2h2l2 2h3l3 3"/></svg>
-                <span id="photo-label">Cliquer pour ajouter une photo</span>
-                <input type="file" id="co-photo" accept="image/*" style="display:none" onchange="handlePhotoUpload(this)">
+              <div class="photo-upload-zone" id="cfg-photo-zone" onclick="document.getElementById('cfg-photo-inp').click()">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="12" cy="12" r="3"/><path d="M3 9l3-3h3l2-2h2l2 2h3l3 3"/></svg>
+                <span id="cfg-photo-label">Cliquer pour ajouter une photo</span>
+                <input type="file" id="cfg-photo-inp" accept="image/*" style="display:none" onchange="handleCfgPhoto(this)">
               </div>
-              <div id="photo-preview-wrap" style="display:none;margin-top:8px">
-                <img id="photo-preview" style="max-height:120px;border-radius:6px;border:1px solid var(--border)">
-                <button type="button" onclick="removePhoto()" style="display:block;margin-top:6px;background:none;border:none;color:var(--ink3);font-size:12px;cursor:pointer;font-family:'Inter',sans-serif">✕ Supprimer la photo</button>
+              <div id="cfg-photo-preview-wrap" style="display:none;margin-top:8px">
+                <img id="cfg-photo-preview" style="max-height:100px;border-radius:6px;border:1px solid var(--border)">
+                <button type="button" onclick="removeCfgPhoto()" style="display:block;margin-top:5px;background:none;border:none;color:var(--ink3);font-size:12px;cursor:pointer;font-family:'Inter',sans-serif">✕ Supprimer</button>
               </div>
             </div>
-            <button type="submit" class="cf-submit" id="co-btn">Envoyer ma demande</button>
+            <button type="submit" class="cf-submit" id="cfg-submit-btn">Envoyer ma commande</button>
           </form>
         </div>
       </div>
     </div>
+
   </div>
   <footer class="site-footer">
     <div class="footer-inner">
@@ -1007,7 +1233,7 @@ a{text-decoration:none;color:inherit}
       <div class="footer-links">
         <span class="footer-link" onclick="showPage('home')">Accueil</span>
         <span class="footer-link" onclick="showPage('shop')">Boutique</span>
-        <span class="footer-link" onclick="showPage('custom')">Sur mesure</span>
+        <span class="footer-link" onclick="showPage('custom')">Configurateur</span>
         <span class="footer-link" onclick="showPage('about')">À propos</span>
         <span class="footer-link" onclick="showPage('contact')">Contact</span>
       </div>
