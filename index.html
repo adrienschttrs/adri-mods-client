@@ -76,7 +76,7 @@ window.removePhoto = function() {
 </script>
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-import { getFirestore, collection, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { getFirestore, collection, doc, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 const INSTAGRAM   = 'https://instagram.com/adrimods';
 const VINTED      = 'https://www.vinted.be';
@@ -109,8 +109,15 @@ onSnapshot(collection(db,'parts'), snap => {
   renderFeatured();
   updateCartBadge();
   initPriceRange();
-  renderModelTags();
 }, e=>console.error(e));
+
+// Tags modèles depuis Firebase — temps réel
+onSnapshot(doc(db,'settings','modelTags'), snap => {
+  MODEL_TAGS.length = 0;
+  const tags = snap.exists() ? (snap.data().tags||[]) : ['GMT-Master','Datejust','Submariner','Explorer','Daytona','Day-Date','Santos','Nautilus','Aquanaut','Royal Oak','PRX'];
+  tags.forEach(t=>MODEL_TAGS.push(t));
+  renderModelTags();
+}, ()=>{ renderModelTags(); });
 
 function initPriceRange() {
   const prices = allProducts.map(p=>parseFloat(p.price)||0).filter(Boolean);
@@ -156,7 +163,7 @@ function renderFeatured() {
 }
 
 // ── RENDER MODEL TAGS ─────────────────────────────────────────────────────────
-const MODEL_TAGS = ['GMT-Master','Datejust','Submariner','Explorer','Daytona','Day-Date','Santos','Nautilus','Aquanaut','Royal Oak','PRX'];
+const MODEL_TAGS = [];
 
 function renderModelTags() {
   const el = document.getElementById('model-tags'); if(!el) return;
