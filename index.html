@@ -965,8 +965,8 @@ body.dark .section-eyebrow{color:#808080}
 .nav-theme-btn:hover{background:var(--bg);border-color:var(--border2)}
 
 /* ── SHOP SIDEBAR LAYOUT ── */
-.shop-topbar-wrap{padding:0 24px;margin-bottom:0}
-.shop-topbar-inner2{max-width:1400px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;padding:24px 0 12px 248px}
+.shop-topbar-wrap{padding:0 24px 12px 24px}
+.shop-topbar-inner2{max-width:1400px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;padding-left:248px}
 body.dark .shop-topbar-wrap{background:transparent}
 .shop-layout{display:grid;grid-template-columns:220px 1fr;gap:28px;max-width:1400px;margin:0 auto;padding:24px 24px;align-items:start}
 .shop-sidebar{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:20px;position:sticky;top:80px}
@@ -1147,24 +1147,6 @@ body.dark .shop-topbar-wrap{background:transparent}
 <!-- ══ SHOP ══ -->
 <div class="page" id="page-shop">
   <div class="page-content">
-    <!-- Barre trier/count au-dessus -->
-    <div class="shop-topbar-wrap">
-      <div class="shop-topbar-inner2">
-        <span class="shop-count" id="shop-count"></span>
-        <div class="sfi-group">
-          <span class="sfi-lbl">Trier</span>
-          <select class="filter-select" onchange="setSort(this.value)">
-            <option value="featured">En vedette</option>
-            <option value="newest">Nouveautés</option>
-            <option value="available">Disponibles d'abord</option>
-            <option value="name-az">Alphabétique, A → Z</option>
-            <option value="name-za">Alphabétique, Z → A</option>
-            <option value="price-asc">Prix : faible à élevé</option>
-            <option value="price-desc">Prix : élevé à faible</option>
-          </select>
-        </div>
-      </div>
-    </div>
     <div class="shop-layout">
       <!-- Sidebar gauche -->
       <aside class="shop-sidebar">
@@ -1186,6 +1168,21 @@ body.dark .shop-topbar-wrap{background:transparent}
       </aside>
       <!-- Grille produits -->
       <div class="shop-main">
+        <div class="shop-topbar-main">
+          <span class="shop-count" id="shop-count"></span>
+          <div class="sfi-group">
+            <span class="sfi-lbl">Trier</span>
+            <select class="filter-select" onchange="setSort(this.value)">
+              <option value="featured">En vedette</option>
+              <option value="newest">Nouveautés</option>
+              <option value="available">Disponibles d'abord</option>
+              <option value="name-az">Alphabétique, A → Z</option>
+              <option value="name-za">Alphabétique, Z → A</option>
+              <option value="price-asc">Prix : faible à élevé</option>
+              <option value="price-desc">Prix : élevé à faible</option>
+            </select>
+          </div>
+        </div>
         <div class="product-grid" id="shop-grid"><div class="no-products">Chargement…</div></div>
         <div class="shop-pagination" id="shop-pagination"></div>
       </div>
