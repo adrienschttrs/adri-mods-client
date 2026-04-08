@@ -201,6 +201,8 @@ function renderFeatured() {
 
 // ── MODEL TAGS ────────────────────────────────────────────────────────────────
 const MODEL_TAGS = [];
+
+window.setModelTag = function(tag) {
   activeModelTag = activeModelTag===tag ? '' : tag;
   currentPage=1; renderSidebar(); renderShop();
 };
