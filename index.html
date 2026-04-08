@@ -199,17 +199,8 @@ function renderFeatured() {
   el.innerHTML = watches.length ? watches.map(productCard).join('') : '<div class="no-products">Catalogue en cours de préparation — revenez bientôt !</div>';
 }
 
-// ── RENDER MODEL TAGS ─────────────────────────────────────────────────────────
+// ── MODEL TAGS ────────────────────────────────────────────────────────────────
 const MODEL_TAGS = [];
-
-function renderModelTags() {
-  const el = document.getElementById('model-tags'); if(!el) return;
-  el.innerHTML = MODEL_TAGS.map(t=>
-    `<button class="model-tag${activeModelTag===t?' active':''}" onclick="setModelTag('${t.replace(/'/g,"\\'")}')">${t}</button>`
-  ).join('');
-}
-
-window.setModelTag = function(tag) {
   activeModelTag = activeModelTag===tag ? '' : tag;
   currentPage=1; renderSidebar(); renderShop();
 };
