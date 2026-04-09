@@ -351,13 +351,13 @@ function renderReviewsList(el, reviews, productId) {
       <div class="rv-title">Avis clients${avg?` · <span class="rv-avg">★ ${avg}</span> (${reviews.length})`:reviews.length?` (${reviews.length})`:''}</div>
       <button class="rv-add-btn" onclick="toggleReviewForm('${productId}')">+ Laisser un avis</button>
     </div>
-    <div class="rv-form-wrap" id="rv-form-${productId}" style="display:none">
+    <div class="rv-form-wrap" id="rv-form-wrap" style="display:none">
       <div class="rv-form">
-        <div class="rv-stars-input" id="rv-stars-${productId}">
+        <div class="rv-stars-input" id="rv-stars-current">
           ${[1,2,3,4,5].map(i=>`<span class="rv-star" data-val="${i}" onclick="setRating('${productId}',${i})">★</span>`).join('')}
         </div>
-        <input class="rv-input" id="rv-name-${productId}" placeholder="Votre prénom" maxlength="30">
-        <textarea class="rv-textarea" id="rv-text-${productId}" placeholder="Votre avis…" maxlength="400" rows="3"></textarea>
+        <input class="rv-input" id="rv-name-inp" placeholder="Votre prénom" maxlength="30">
+        <textarea class="rv-textarea" id="rv-text-inp" placeholder="Votre avis…" maxlength="400" rows="3"></textarea>
         <button class="rv-submit-btn" onclick="submitReview('${productId}')">Publier mon avis</button>
       </div>
     </div>
@@ -387,27 +387,28 @@ window.deleteReview = async function(reviewId, productId) {
 };
 window.setRating = function(productId, val) {
   currentRating[productId] = val;
-  const stars = document.querySelectorAll(`#rv-stars-${productId} .rv-star`);
-  stars.forEach(s=>s.classList.toggle('active', parseInt(s.dataset.val)<=val));
+  document.querySelectorAll('#rv-stars-current .rv-star').forEach(s => {
+    s.classList.toggle('active', parseInt(s.dataset.val) <= val);
+  });
 };
 
 window.toggleReviewForm = function(productId) {
-  const f=document.getElementById(`rv-form-${productId}`);
+  const f = document.getElementById('rv-form-wrap');
   if(f) f.style.display = f.style.display==='none' ? 'block' : 'none';
 };
 
 window.submitReview = async function(productId) {
-  const name = document.getElementById(`rv-name-${productId}`)?.value.trim();
-  const text = document.getElementById(`rv-text-${productId}`)?.value.trim();
+  const name = document.getElementById('rv-name-inp')?.value.trim();
+  const text = document.getElementById('rv-text-inp')?.value.trim();
   const rating = currentRating[productId] || 5;
   if(!name) { alert('Veuillez entrer votre prénom.'); return; }
   if(!text || text.length < 10) { alert('Votre avis doit faire au moins 10 caractères.'); return; }
-  const btn = document.querySelector(`#rv-form-${productId} .rv-submit-btn`);
+  const btn = document.querySelector('#rv-form-wrap .rv-submit-btn');
   if(btn) { btn.textContent='Publication…'; btn.disabled=true; }
   try {
     await addDoc(collection(db,'reviews'), { productId, name, text, rating, ts: Date.now() });
     await loadReviewsForProduct(productId);
-    loadAllReviews(); // refresh home page
+    loadAllReviews();
   } catch(e) {
     alert('Erreur lors de la publication. Réessayez.');
     if(btn){btn.textContent='Publier mon avis';btn.disabled=false;}
