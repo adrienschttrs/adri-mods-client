@@ -313,78 +313,10 @@ document.addEventListener('click', e => {
 });
 
 
-// ── ADMIN MODE ────────────────────────────────────────────────────────────────
-// Mot de passe stocké uniquement côté client — change-le après déploiement
-window.deleteReview = async function(reviewId, productId) {
-  if(!isAdmin) return;
-  if(!confirm('Supprimer cet avis ?')) return;
-  try {
-    await deleteDoc(doc(db,'reviews',reviewId));
-    await loadReviewsForProduct(productId);
-    loadAllReviews();
-    showToast('Avis supprimé');
-  } catch(e) {
-    alert('Erreur lors de la suppression.');
-  }
-};
+// ── REVIEWS SYSTEM ────────────────────────────────────────────────────────────
 let currentProductId = null;
+const currentRating = {};
 
-async function loadReviewsForProduct(productId) {
-  const el = document.getElementById('pm-reviews-list'); if(!el) return;
-  el.innerHTML = '<div class="rv-loading">Chargement des avis…</div>';
-  try {
-    // Simple query without orderBy to avoid needing a composite index
-    const snap = await getDocs(query(collection(db,'reviews'), where('productId','==',productId)));
-    const reviews = snap.docs.map(d=>({id:d.id,...d.data()}))
-      .sort((a,b)=>(b.ts||0)-(a.ts||0));
-    renderReviewsList(el, reviews, productId);
-  } catch(e) {
-    // Fallback: show form even if reviews can't load
-    renderReviewsList(el, [], productId);
-  }
-}
-
-function renderReviewsList(el, reviews, productId) {
-  const avg = reviews.length ? (reviews.reduce((a,r)=>a+(r.rating||5),0)/reviews.length).toFixed(1) : null;
-  el.innerHTML = `
-    <div class="rv-header">
-      <div class="rv-title">Avis clients${avg?` · <span class="rv-avg">★ ${avg}</span> (${reviews.length})`:reviews.length?` (${reviews.length})`:''}</div>
-      <button class="rv-add-btn" onclick="toggleReviewForm('${productId}')">+ Laisser un avis</button>
-    </div>
-    <div class="rv-form-wrap" id="rv-form-wrap" style="display:none">
-      <div class="rv-form">
-        <div class="rv-stars-input" id="rv-stars-current">
-          ${[1,2,3,4,5].map(i=>`<span class="rv-star" data-val="${i}" onclick="setRating('${productId}',${i})">★</span>`).join('')}
-        </div>
-        <input class="rv-input" id="rv-name-inp" placeholder="Votre prénom" maxlength="30">
-        <textarea class="rv-textarea" id="rv-text-inp" placeholder="Votre avis…" maxlength="400" rows="3"></textarea>
-        <button class="rv-submit-btn" onclick="submitReview('${productId}')">Publier mon avis</button>
-      </div>
-    </div>
-    <div class="rv-list">
-      ${reviews.length ? reviews.map(r=>`
-        <div class="rv-item">
-          <div class="rv-item-header">
-            <span class="rv-item-stars">${'★'.repeat(r.rating||5)}</span>
-            <span class="rv-item-name">${r.name||'Anonyme'}</span>
-            <span class="rv-item-date">${r.ts ? new Date(r.ts).toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'}) : ''}</span>
-          </div>
-          <div class="rv-item-text">${r.text||''}</div>
-          ${isAdmin?`<button onclick="deleteReview('${r.id}','${r.productId}')" style="margin-top:6px;background:none;border:1px solid #c04040;color:#c04040;border-radius:4px;padding:3px 10px;font-size:11px;cursor:pointer;font-family:'Inter',sans-serif">🗑️ Supprimer</button>`:''}
-        </div>`).join('') : '<div class="rv-empty">Soyez le premier à laisser un avis !</div>'}
-    </div>`;
-  setRating(productId, 5);
-}
-
-window.deleteReview = async function(reviewId, productId) {
-  if(!isAdmin) return;
-  if(!confirm('Supprimer cet avis ?')) return;
-  try {
-    await deleteDoc(doc(db,'reviews',reviewId));
-    await loadReviewsForProduct(productId);
-    loadAllReviews();
-  } catch(e) { alert('Erreur lors de la suppression.'); }
-};
 window.setRating = function(productId, val) {
   currentRating[productId] = val;
   document.querySelectorAll('#rv-stars-current .rv-star').forEach(s => {
@@ -415,22 +347,72 @@ window.submitReview = async function(productId) {
   }
 };
 
-// Load all reviews for homepage
+window.deleteReview = async function(reviewId, productId) {
+  if(!isAdmin) return;
+  if(!confirm('Supprimer cet avis ?')) return;
+  try {
+    await deleteDoc(doc(db,'reviews',reviewId));
+    await loadReviewsForProduct(productId);
+    loadAllReviews();
+    showToast('Avis supprimé');
+  } catch(e) { alert('Erreur lors de la suppression.'); }
+};
+
+async function loadReviewsForProduct(productId) {
+  const el = document.getElementById('pm-reviews-list'); if(!el) return;
+  el.innerHTML = '<div class="rv-loading">Chargement des avis…</div>';
+  try {
+    const snap = await getDocs(query(collection(db,'reviews'), where('productId','==',productId)));
+    const reviews = snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.ts||0)-(a.ts||0));
+    renderReviewsList(el, reviews, productId);
+  } catch(e) {
+    renderReviewsList(el, [], productId);
+  }
+}
+
+function renderReviewsList(el, reviews, productId) {
+  const avg = reviews.length ? (reviews.reduce((a,r)=>a+(r.rating||5),0)/reviews.length).toFixed(1) : null;
+  el.innerHTML = `
+    <div class="rv-header">
+      <div class="rv-title">Avis clients${avg?` · <span class="rv-avg">★ ${avg}</span> (${reviews.length})`:''}</div>
+      <button class="rv-add-btn" onclick="toggleReviewForm('${productId}')">+ Laisser un avis</button>
+    </div>
+    <div class="rv-form-wrap" id="rv-form-wrap" style="display:none">
+      <div class="rv-form">
+        <div class="rv-stars-input" id="rv-stars-current">
+          ${[1,2,3,4,5].map(i=>`<span class="rv-star" data-val="${i}" onclick="setRating('${productId}',${i})">★</span>`).join('')}
+        </div>
+        <input class="rv-input" id="rv-name-inp" placeholder="Votre prénom" maxlength="30">
+        <textarea class="rv-textarea" id="rv-text-inp" placeholder="Votre avis…" maxlength="400" rows="3"></textarea>
+        <button class="rv-submit-btn" onclick="submitReview('${productId}')">Publier mon avis</button>
+      </div>
+    </div>
+    <div class="rv-list">
+      ${reviews.length ? reviews.map(r=>`
+        <div class="rv-item">
+          <div class="rv-item-header">
+            <span class="rv-item-stars">${'★'.repeat(r.rating||5)}</span>
+            <span class="rv-item-name">${r.name||'Anonyme'}</span>
+            <span class="rv-item-date">${r.ts?new Date(r.ts).toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'}):''}</span>
+          </div>
+          <div class="rv-item-text">${r.text||''}</div>
+          ${isAdmin?`<button onclick="deleteReview('${r.id}','${productId}')" style="margin-top:4px;background:none;border:1px solid #c04040;color:#c04040;border-radius:4px;padding:2px 8px;font-size:11px;cursor:pointer;font-family:'Inter',sans-serif">🗑 Supprimer</button>`:''}
+        </div>`).join('') : '<div class="rv-empty">Soyez le premier à laisser un avis !</div>'}
+    </div>`;
+  currentRating[productId] = 5;
+  setRating(productId, 5);
+}
+
 async function loadAllReviews() {
   const el = document.getElementById('home-reviews-list'); if(!el) return;
   try {
-    const snap = await getDocs(query(collection(db,'reviews'), orderBy('ts','desc')));
-    const reviews = snap.docs.map(d=>({id:d.id,...d.data()}));
+    const snap = await getDocs(collection(db,'reviews'));
+    const reviews = snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.ts||0)-(a.ts||0));
     if(!reviews.length) {
-      el.innerHTML=`<div class="reviews-empty">
-        <div class="reviews-empty-icon">⭐</div>
-        <div class="reviews-empty-text">Les premiers avis arrivent bientôt.<br>Vous avez acheté une montre ? Laissez votre avis sur la fiche produit !</div>
-      </div>`;
+      el.innerHTML=`<div class="reviews-empty"><div class="reviews-empty-icon">⭐</div><div class="reviews-empty-text">Les premiers avis arrivent bientôt.<br>Laissez votre avis sur la fiche d'un produit !</div></div>`;
       return;
     }
-    // Show latest 3
-    const latest = reviews.slice(0,3);
-    el.innerHTML = `<div class="reviews-grid">${latest.map(r=>{
+    el.innerHTML = `<div class="reviews-grid">${reviews.slice(0,3).map(r=>{
       const prod = allProducts.find(p=>p.id===r.productId);
       return `<div class="review-card">
         <div class="review-stars">${'★'.repeat(r.rating||5)}</div>
@@ -441,6 +423,7 @@ async function loadAllReviews() {
     }).join('')}</div>`;
   } catch(e) {}
 }
+
 
 // ── DARK MODE ─────────────────────────────────────────────────────────────────
 window.toggleFaq = function(el) {
