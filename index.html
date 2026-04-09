@@ -600,34 +600,36 @@ function updateCartBadge() {
 }
 function renderCart() {
   updateCartBadge();
-  const el=document.getElementById('cart-items'); if(!el) return;
-  const total=cart.reduce((a,c)=>a+(parseFloat(c.price)||0),0);
-  if(!cart.length){
-    el.innerHTML=`<div class="cart-empty">
-      <svg width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" style="opacity:.3"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
-      <div>Votre panier est vide</div>
-      <button onclick="closeCart();showPage('shop')" style="font-size:12px;background:none;border:1px solid var(--border);border-radius:20px;padding:6px 16px;cursor:pointer;color:var(--ink2);font-family:'Inter',sans-serif">Voir la boutique</button>
+  const el = document.getElementById('cart-items'); if(!el) return;
+  const total = cart.reduce((a,c)=>a+(parseFloat(c.price)||0),0);
+  const count = cart.length;
+  const countEl = document.getElementById('cart-hdr-count');
+  if(countEl) countEl.textContent = count ? `(${count})` : '';
+
+  if(!count){
+    el.innerHTML=`<div class="cart-empty-state">
+      <svg width="52" height="52" fill="none" stroke="currentColor" stroke-width="1.2" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+      <p>Votre panier est vide</p>
+      <small>Ajoutez des montres depuis la boutique</small>
+      <button onclick="closeCart();showPage('shop')" class="cart-btn-checkout" style="width:auto;padding:10px 24px;margin:0">Voir la boutique</button>
     </div>`;
-    document.getElementById('cart-total').textContent='0.00 €';
-    document.getElementById('cart-checkout-btn').style.display='none';
-    const vpb=document.getElementById('cart-view-page-btn'); if(vpb) vpb.style.display='none';
+    document.getElementById('cart-footer-section').style.display='none';
     return;
   }
-  el.innerHTML=cart.map((item,i)=>`<div class="cart-item">
-    <img src="${item.img}" class="cart-item-img" alt="${item.name}">
-    <div class="cart-item-info">
-      <div class="cart-item-name">${item.name}</div>
-      ${item.size?`<div class="cart-item-variant">${item.size}</div>`:''}
-      <div class="cart-item-price">${parseFloat(item.price).toFixed(2)} €</div>
-    </div>
-    <button class="cart-item-del" onclick="removeFromCart(${i})" title="Retirer">
-      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-    </button>
-  </div>`).join('');
-  document.getElementById('cart-total').textContent=total.toFixed(2)+' €';
-  document.getElementById('cart-checkout-btn').style.display='flex';
-  document.getElementById('cart-view-page-btn').style.display='flex';
-  // Also update cart page if open
+  document.getElementById('cart-footer-section').style.display='block';
+  el.innerHTML = cart.map((item,i)=>`
+    <div class="cart-item">
+      <img src="${item.img}" class="cart-item-img" alt="${item.name}">
+      <div class="cart-item-body">
+        <div class="cart-item-name">${item.name}</div>
+        ${item.size?`<div class="cart-item-variant">${item.size}</div>`:''}
+        <div class="cart-item-row">
+          <span class="cart-item-price">${parseFloat(item.price).toFixed(2)} €</span>
+          <button class="cart-item-del" onclick="removeFromCart(${i})">Supprimer</button>
+        </div>
+      </div>
+    </div>`).join('');
+  document.getElementById('cart-total').textContent = total.toFixed(2)+' €';
   renderCartPage();
 }
 function renderCartPage() {
@@ -663,7 +665,6 @@ window.openCart = function() { renderCart(); document.getElementById('cart-modal
 window.closeCart = function() { document.getElementById('cart-modal').classList.add('hidden'); document.body.style.overflow=''; };
 window.checkoutCart = function() {
   if(!cart.length) return;
-  // Build cart summary for contact form
   const summary = cart.map(i=>`- ${i.name}${i.size?' ('+i.size+')':''} — ${parseFloat(i.price).toFixed(2)}€`).join('\n');
   closeCart();
   showPage('contact');
@@ -671,6 +672,57 @@ window.checkoutCart = function() {
     const msg = document.getElementById('c-msg');
     if(msg) msg.value = `Bonjour, je souhaite commander :\n\n${summary}\n\nTotal : ${cart.reduce((a,c)=>a+(parseFloat(c.price)||0),0).toFixed(2)}€`;
   }, 200);
+};
+
+window.searchOrder = async function() {
+  const email = document.getElementById('tracking-email-inp')?.value.trim().toLowerCase();
+  const result = document.getElementById('tracking-result');
+  if(!email) { result.innerHTML=`<p style="color:#c04040;font-size:13px">Veuillez entrer votre adresse email.</p>`; return; }
+  result.innerHTML=`<div style="font-size:13px;color:var(--ink3);text-align:center;padding:20px">Recherche en cours…</div>`;
+  try {
+    const snap = await getDocs(query(collection(db,'orders'), where('email','==',email)));
+    if(snap.empty) {
+      result.innerHTML=`<div class="tracking-result-card" style="text-align:center">
+        <svg width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.2" viewBox="0 0 24 24" style="opacity:.2;margin-bottom:12px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <p style="font-size:15px;font-weight:600;color:var(--ink);margin-bottom:6px">Aucune commande trouvée</p>
+        <p style="font-size:13px;color:var(--ink3)">Vérifiez l'email utilisé lors de votre commande ou contactez-nous.</p>
+      </div>`;
+      return;
+    }
+    const orders = snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.ts||0)-(a.ts||0));
+    const statusLabel = {pending:'En attente de confirmation',confirmed:'Confirmée',shipped:'Expédiée',delivered:'Livrée'};
+    const statusClass = {pending:'pending',confirmed:'confirmed',shipped:'shipped',delivered:'delivered'};
+    const stepsDef = ['pending','confirmed','shipped','delivered'];
+    const stepsLabel = ['Commande reçue','Confirmée & paiement','Expédiée','Livrée'];
+    result.innerHTML = orders.map(o => {
+      const statusIdx = stepsDef.indexOf(o.status||'pending');
+      return `<div class="tracking-result-card">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
+          <div>
+            <div style="font-size:12px;color:var(--ink3);margin-bottom:4px">Commande du ${o.ts ? new Date(o.ts).toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'}) : '—'}</div>
+            <div style="font-size:15px;font-weight:700;color:var(--ink)">${o.total||'—'}</div>
+          </div>
+          <span class="tracking-status ${statusClass[o.status||'pending']}">${statusLabel[o.status||'pending']}</span>
+        </div>
+        ${o.items?.length ? `<div style="font-size:12px;color:var(--ink3);margin-bottom:16px">${o.items.join(' · ')}</div>` : ''}
+        ${o.trackingNumber ? `<div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--r-sm);padding:10px 14px;margin-bottom:16px;font-size:13px">
+          <span style="color:var(--ink3)">Numéro de suivi : </span>
+          <strong style="color:var(--ink)">${o.trackingNumber}</strong>
+        </div>` : ''}
+        <div class="tracking-steps">
+          ${stepsDef.map((s,idx)=>`<div class="tracking-step">
+            <div class="tracking-step-dot ${idx<=statusIdx?'done':''}"></div>
+            <div class="tracking-step-info">
+              <div class="tracking-step-label" style="color:${idx<=statusIdx?'var(--ink)':'var(--ink3)'}">${stepsLabel[idx]}</div>
+              ${idx===statusIdx&&o.statusDate ? `<div class="tracking-step-date">${new Date(o.statusDate).toLocaleDateString('fr-FR',{day:'numeric',month:'long'})}</div>` : ''}
+            </div>
+          </div>`).join('')}
+        </div>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    result.innerHTML=`<p style="color:#c04040;font-size:13px">Erreur lors de la recherche. Réessayez.</p>`;
+  }
 };
 
 // ── NAV ───────────────────────────────────────────────────────────────────────
@@ -791,7 +843,7 @@ a{text-decoration:none;color:inherit}
 
 /* ── PAGES ── */
 .page{display:none;flex-direction:column}
-.page.active{display:flex;min-height:100vh}
+.page.active{display:flex;flex:1;flex-direction:column}
 .page-content{flex:1}
 
 /* ── FOOTER ALWAYS AT BOTTOM ── */
@@ -957,51 +1009,78 @@ a{text-decoration:none;color:inherit}
 .pm-g-item{font-size:11px;color:var(--ink3)}
 
 /* ── CART ── */
-.cart-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:flex;justify-content:flex-end;backdrop-filter:blur(3px)}
+/* ── CART SHOPIFY STYLE ── */
+.cart-overlay{position:fixed;inset:0;z-index:400;display:flex;justify-content:flex-end}
 .cart-overlay.hidden{display:none}
-.cart-panel{width:100%;max-width:440px;background:var(--surface);height:100%;display:flex;flex-direction:column;box-shadow:-8px 0 40px rgba(0,0,0,.18)}
-.cart-hdr{padding:20px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
-.cart-hdr h3{font-family:'Playfair Display',serif;font-size:20px;color:var(--ink)}
-.cart-close{background:var(--bg);border:1px solid var(--border);border-radius:var(--r-sm);padding:6px;cursor:pointer;color:var(--ink2);display:flex;align-items:center;justify-content:center;transition:all .14s}
-.cart-close:hover{border-color:var(--ink);color:var(--ink)}
-.cart-items{flex:1;overflow-y:auto;padding:16px 24px;display:flex;flex-direction:column;gap:14px}
-.cart-item{display:grid;grid-template-columns:64px 1fr auto;gap:12px;align-items:center;padding:12px;background:var(--bg);border:1px solid var(--border);border-radius:var(--r-sm)}
-.cart-item-img{width:64px;height:64px;object-fit:cover;border-radius:var(--r-sm);background:var(--border)}
-.cart-item-info{min-width:0}
-.cart-item-name{font-size:13px;font-weight:600;color:var(--ink);line-height:1.3;margin-bottom:3px}
-.cart-item-variant{font-size:11px;color:var(--ink3);margin-bottom:4px}
-.cart-item-price{font-size:15px;font-weight:600;color:var(--ink);font-family:'Playfair Display',serif}
-.cart-item-del{background:none;border:none;color:var(--ink3);cursor:pointer;padding:4px;border-radius:4px;transition:color .14s;display:flex;align-items:center}
+.cart-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.4)}
+.cart-panel{position:relative;width:100%;max-width:400px;background:var(--surface);height:100%;display:flex;flex-direction:column;box-shadow:-4px 0 32px rgba(0,0,0,.12);animation:slideIn .25s ease}
+@keyframes slideIn{from{transform:translateX(100%)}to{transform:translateX(0)}}
+.cart-hdr{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.cart-hdr-left{display:flex;align-items:center;gap:8px}
+.cart-hdr-title{font-size:16px;font-weight:700;color:var(--ink);letter-spacing:.01em}
+.cart-hdr-count{font-size:12px;color:var(--ink3);font-family:'DM Mono',monospace}
+.cart-close{background:none;border:1px solid var(--border);border-radius:50%;width:32px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink2);transition:all .14s}
+.cart-close:hover{border-color:var(--ink);color:var(--ink);background:var(--bg)}
+.cart-items{flex:1;overflow-y:auto;padding:0}
+.cart-item{display:grid;grid-template-columns:88px 1fr;border-bottom:1px solid var(--border)}
+.cart-item-img{width:88px;height:104px;object-fit:cover;background:var(--bg)}
+.cart-item-body{padding:14px 16px;display:flex;flex-direction:column;gap:4px;min-width:0}
+.cart-item-name{font-size:13px;font-weight:600;color:var(--ink);line-height:1.35}
+.cart-item-variant{font-size:11px;color:var(--ink3)}
+.cart-item-row{display:flex;align-items:center;justify-content:space-between;margin-top:auto;padding-top:8px}
+.cart-item-price{font-size:14px;font-weight:700;color:var(--ink);font-family:'Playfair Display',serif}
+.cart-item-del{background:none;border:none;color:var(--ink3);cursor:pointer;font-size:11px;padding:4px 0;transition:color .14s;font-family:'Inter',sans-serif;text-decoration:underline;text-underline-offset:2px}
 .cart-item-del:hover{color:#c04040}
-.cart-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;flex:1;color:var(--ink3);font-size:14px;padding:40px 0}
-.cart-footer{padding:20px 24px;border-top:1px solid var(--border)}
-.cart-total-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
-.cart-total-lbl{font-size:14px;font-weight:600;color:var(--ink)}
-.cart-total-val{font-size:22px;font-weight:600;font-family:'Playfair Display',serif;color:var(--ink)}
-.cart-checkout{width:100%;padding:13px;background:var(--ink);color:#fff;border:none;border-radius:var(--r-sm);font-size:14px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;display:flex;align-items:center;justify-content:center;gap:8px;transition:opacity .14s;margin-bottom:8px}
-.cart-checkout:hover{opacity:.88}
-.cart-continue{width:100%;padding:11px;background:transparent;color:var(--ink2);border:1px solid var(--border);border-radius:var(--r-sm);font-size:13px;cursor:pointer;font-family:'Inter',sans-serif;transition:all .14s}
-.cart-continue:hover{border-color:var(--ink);color:var(--ink)}
-.cart-view-page{width:100%;padding:10px;background:transparent;color:var(--ink2);border:1px solid var(--border);border-radius:var(--r-sm);font-size:12px;cursor:pointer;font-family:'Inter',sans-serif;transition:all .14s;display:none;align-items:center;justify-content:center;gap:6px;margin-bottom:8px}
-.cart-view-page:hover{border-color:var(--ink);color:var(--ink)}
+.cart-empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:16px;padding:40px 20px;text-align:center}
+.cart-empty-state svg{opacity:.2}
+.cart-empty-state p{font-size:15px;color:var(--ink2);font-weight:500}
+.cart-empty-state small{font-size:12px;color:var(--ink3)}
+.cart-footer{padding:16px 20px;border-top:1px solid var(--border);flex-shrink:0;background:var(--surface)}
+.cart-subtotal{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px}
+.cart-subtotal-lbl{font-size:13px;color:var(--ink2)}
+.cart-subtotal-val{font-size:20px;font-weight:700;font-family:'Playfair Display',serif;color:var(--ink)}
+.cart-shipping-note{font-size:11px;color:var(--ink3);margin-bottom:14px}
+.cart-btn-checkout{width:100%;padding:14px;background:var(--ink);color:#fff;border:none;border-radius:var(--r-sm);font-size:14px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;letter-spacing:.02em;transition:opacity .14s;margin-bottom:8px}
+.cart-btn-checkout:hover{opacity:.88}
+.cart-btn-continue{width:100%;padding:12px;background:transparent;color:var(--ink);border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:13px;cursor:pointer;font-family:'Inter',sans-serif;transition:all .14s}
+.cart-btn-continue:hover{border-color:var(--ink)}
+body.dark .cart-panel{background:#111}
+body.dark .cart-item-img{background:#1a1a1a}
+body.dark .cart-hdr{border-color:#222}
+body.dark .cart-item{border-color:#222}
+body.dark .cart-footer{background:#111;border-color:#222}
 /* ── CART PAGE ── */
-.cart-page-layout{display:grid;grid-template-columns:1fr 360px;gap:32px;align-items:start;max-width:1000px;margin:0 auto}
-.cart-page-list{display:flex;flex-direction:column;gap:12px}
-.cart-page-item{display:grid;grid-template-columns:80px 1fr auto auto;gap:16px;align-items:center;padding:16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r)}
+.cart-page-layout{display:grid;grid-template-columns:1fr 340px;gap:32px;align-items:start}
+.cart-page-list{display:flex;flex-direction:column}
+.cart-page-item{display:grid;grid-template-columns:80px 1fr auto auto;gap:16px;align-items:center;padding:16px 0;border-bottom:1px solid var(--border)}
 .cart-page-img{width:80px;height:80px;object-fit:cover;border-radius:var(--r-sm);background:var(--bg)}
-.cart-page-info{min-width:0}
-.cart-page-price{font-family:'Playfair Display',serif;font-size:18px;font-weight:500;color:var(--ink);white-space:nowrap}
+.cart-page-price{font-family:'Playfair Display',serif;font-size:17px;font-weight:600;color:var(--ink)}
 .cart-summary-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:24px;position:sticky;top:90px}
-.cart-summary-title{font-family:'Playfair Display',serif;font-size:18px;margin-bottom:16px;color:var(--ink)}
-.cart-summary-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;font-size:14px;color:var(--ink2)}
-.cart-summary-divider{border:none;border-top:1px solid var(--border);margin:12px 0}
+.cart-summary-title{font-size:15px;font-weight:700;color:var(--ink);margin-bottom:16px;letter-spacing:.02em;text-transform:uppercase}
+.cart-summary-row{display:flex;justify-content:space-between;font-size:14px;color:var(--ink2);margin-bottom:10px}
+.cart-summary-divider{border:none;border-top:1px solid var(--border);margin:14px 0}
 .cart-summary-total{font-size:16px;font-weight:700;color:var(--ink)}
-body.dark .cart-page-item{background:#1a1a1a;border-color:#2a2a2a}
-body.dark .cart-summary-box{background:#1a1a1a;border-color:#2a2a2a}
-body.dark .cart-view-page{border-color:#2a2a2a;color:#b0b0b0}
+body.dark .cart-summary-box,.body.dark .cart-page-item{border-color:#222}
 @media(max-width:768px){.cart-page-layout{grid-template-columns:1fr}.cart-summary-box{position:static}}
 
-/* ── TOAST ── */
+/* ── TRACKING ── */
+.tracking-search-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:28px}
+.tracking-result-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:24px;margin-top:20px}
+.tracking-status{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:20px;font-size:12px;font-weight:600;margin-bottom:16px}
+.tracking-status.pending{background:#fef3cd;color:#856404}
+.tracking-status.confirmed{background:#d1ecf1;color:#0c5460}
+.tracking-status.shipped{background:#d4edda;color:#155724}
+.tracking-status.delivered{background:#d4edda;color:#155724}
+body.dark .tracking-search-box{background:#111;border-color:#222}
+body.dark .tracking-result-card{background:#111;border-color:#222}
+.tracking-steps{display:flex;flex-direction:column;gap:0;margin-top:16px}
+.tracking-step{display:flex;gap:14px;padding:12px 0;border-bottom:1px solid var(--border)}
+.tracking-step:last-child{border-bottom:none}
+.tracking-step-dot{width:10px;height:10px;border-radius:50%;background:var(--border2);flex-shrink:0;margin-top:4px}
+.tracking-step-dot.done{background:var(--gold)}
+.tracking-step-info{flex:1}
+.tracking-step-label{font-size:13px;font-weight:600;color:var(--ink)}
+.tracking-step-date{font-size:11px;color:var(--ink3);margin-top:2px}
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(60px);background:var(--ink);color:#fff;padding:10px 20px;border-radius:20px;font-size:13px;font-weight:500;z-index:999;opacity:0;transition:all .22s;pointer-events:none}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
@@ -1413,6 +1492,7 @@ body.dark .shop-topbar-wrap{background:transparent}
       <button class="nav-link" data-page="about" onclick="showPage('about')">À propos</button>
       <button class="nav-link" data-page="custom" onclick="showPage('custom')">Commande personnalisée</button>
       <button class="nav-link" data-page="contact" onclick="showPage('contact')">Contact</button>
+      <button class="nav-link" data-page="tracking" onclick="showPage('tracking')">Suivi commande</button>
     </div>
     <div class="nav-right">
       <div class="nav-search-wrap">
@@ -1865,34 +1945,29 @@ body.dark .shop-topbar-wrap{background:transparent}
   </div>
 </div>
 
-<!-- CART MODAL -->
-<div class="cart-overlay hidden" id="cart-modal" onclick="if(event.target===this)closeCart()">
+<!-- CART DRAWER -->
+<div class="cart-overlay hidden" id="cart-modal">
+  <div class="cart-backdrop" onclick="closeCart()"></div>
   <div class="cart-panel">
     <div class="cart-hdr">
-      <div style="display:flex;align-items:center;gap:10px">
-        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
-        <h3>Mon panier</h3>
+      <div class="cart-hdr-left">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+        <span class="cart-hdr-title">Mon panier</span>
+        <span class="cart-hdr-count" id="cart-hdr-count"></span>
       </div>
       <button class="cart-close" onclick="closeCart()">
-        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>
     </div>
     <div class="cart-items" id="cart-items"></div>
-    <div class="cart-footer">
-      <div class="cart-total-row">
-        <span class="cart-total-lbl">Total estimé</span>
-        <span class="cart-total-val" id="cart-total">0.00 €</span>
+    <div class="cart-footer" id="cart-footer-section">
+      <div class="cart-subtotal">
+        <span class="cart-subtotal-lbl">Sous-total</span>
+        <span class="cart-subtotal-val" id="cart-total">0.00 €</span>
       </div>
-      <p style="font-size:11px;color:var(--ink3);text-align:center;margin-bottom:12px">Le paiement se confirme par message — je vous recontacte sous 24h.</p>
-      <button class="cart-checkout" id="cart-checkout-btn" style="display:none" onclick="checkoutCart()">
-        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81 19.79 19.79 0 01.08 1.18 2 2 0 012.06 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
-        Envoyer ma commande
-      </button>
-      <button class="cart-view-page" id="cart-view-page-btn" style="display:none" onclick="closeCart();showPage('cart')">
-        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-        Voir le récapitulatif complet
-      </button>
-      <button class="cart-continue" onclick="closeCart()">Continuer mes achats</button>
+      <div class="cart-shipping-note">Livraison offerte · Expédition depuis la Belgique</div>
+      <button class="cart-btn-checkout" id="cart-checkout-btn" onclick="checkoutCart()">Envoyer ma commande</button>
+      <button class="cart-btn-continue" onclick="closeCart()">Continuer mes achats</button>
     </div>
   </div>
 </div>
@@ -1967,6 +2042,32 @@ body.dark .shop-topbar-wrap{background:transparent}
   </div>
 </div>
 
+<!-- ══ TRACKING ══ -->
+<div class="page" id="page-tracking">
+  <div class="page-content">
+    <div class="section">
+      <div class="section-hdr">
+        <div class="section-eyebrow">Suivi</div>
+        <h2 class="section-title">Suivre votre commande</h2>
+        <p class="section-sub">Entrez l'email utilisé lors de votre commande.</p>
+      </div>
+      <div style="max-width:520px;margin:0 auto">
+        <div class="tracking-search-box">
+          <div class="cf-group">
+            <label>Adresse email</label>
+            <input type="email" id="tracking-email-inp" placeholder="votre@email.com" onkeydown="if(event.key==='Enter')searchOrder()">
+          </div>
+          <button class="cf-submit" onclick="searchOrder()">
+            <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            Rechercher ma commande
+          </button>
+        </div>
+        <div id="tracking-result" style="margin-top:28px"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- GLOBAL FOOTER -->
 <footer class="site-footer" id="global-footer">
   <div class="footer-inner">
@@ -1978,6 +2079,7 @@ body.dark .shop-topbar-wrap{background:transparent}
       <span class="footer-link" onclick="showPage('custom')">Commande personnalisée</span>
       <span class="footer-link" onclick="showPage('about')">À propos</span>
       <span class="footer-link" onclick="showPage('contact')">Contact</span>
+      <span class="footer-link" onclick="showPage('tracking')">Suivi commande</span>
       <span class="footer-link" onclick="showPage('faq')">FAQ & CGV</span>
     </div>
     <div class="footer-copy">© 2025 Adri Mods — Tous droits réservés</div>
