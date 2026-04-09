@@ -610,6 +610,7 @@ function renderCart() {
     </div>`;
     document.getElementById('cart-total').textContent='0.00 €';
     document.getElementById('cart-checkout-btn').style.display='none';
+    const vpb=document.getElementById('cart-view-page-btn'); if(vpb) vpb.style.display='none';
     return;
   }
   el.innerHTML=cart.map((item,i)=>`<div class="cart-item">
@@ -625,7 +626,39 @@ function renderCart() {
   </div>`).join('');
   document.getElementById('cart-total').textContent=total.toFixed(2)+' €';
   document.getElementById('cart-checkout-btn').style.display='flex';
+  document.getElementById('cart-view-page-btn').style.display='flex';
+  // Also update cart page if open
+  renderCartPage();
 }
+function renderCartPage() {
+  const el = document.getElementById('cart-page-items'); if(!el) return;
+  const total = cart.reduce((a,c)=>a+(parseFloat(c.price)||0),0);
+  if(!cart.length) {
+    el.innerHTML=`<div class="cart-empty" style="padding:60px 0">
+      <svg width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.2" viewBox="0 0 24 24" style="opacity:.2;margin-bottom:12px"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+      <div style="font-size:16px;font-weight:500;color:var(--ink2)">Votre panier est vide</div>
+      <button onclick="showPage('shop')" class="btn-primary" style="margin-top:20px">Voir la boutique</button>
+    </div>`;
+    document.getElementById('cart-page-total').textContent='0.00 €';
+    document.getElementById('cart-page-checkout-btn').style.display='none';
+    return;
+  }
+  el.innerHTML = cart.map((item,i)=>`<div class="cart-page-item">
+    <img src="${item.img}" class="cart-page-img" alt="${item.name}">
+    <div class="cart-page-info">
+      <div class="cart-item-name">${item.name}</div>
+      ${item.size?`<div class="cart-item-variant">${item.size}</div>`:''}
+    </div>
+    <div class="cart-page-price">${parseFloat(item.price).toFixed(2)} €</div>
+    <button class="cart-item-del" onclick="removeFromCart(${i});renderCartPage()" title="Retirer">
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>`).join('');
+  document.getElementById('cart-page-total').textContent=total.toFixed(2)+' €';
+  const t2=document.getElementById('cart-page-total-2'); if(t2) t2.textContent=total.toFixed(2)+' €';
+  document.getElementById('cart-page-checkout-btn').style.display='flex';
+} // end renderCartPage
+
 window.openCart = function() { renderCart(); document.getElementById('cart-modal').classList.remove('hidden'); document.body.style.overflow='hidden'; };
 window.closeCart = function() { document.getElementById('cart-modal').classList.add('hidden'); document.body.style.overflow=''; };
 window.checkoutCart = function() {
@@ -664,6 +697,7 @@ window.showPage = function(page) {
   document.querySelectorAll('.nav-link').forEach(l=>l.classList.toggle('active',l.dataset.page===page));
   window.scrollTo({top:0,behavior:'smooth'});
   if(page==='shop') { renderShop(); renderSidebar(); }
+  if(page==='cart') { renderCartPage(); }
 };
 window.openSocial = function(url) { window.open(url,'_blank'); };
 
@@ -948,25 +982,24 @@ a{text-decoration:none;color:inherit}
 .cart-checkout:hover{opacity:.88}
 .cart-continue{width:100%;padding:11px;background:transparent;color:var(--ink2);border:1px solid var(--border);border-radius:var(--r-sm);font-size:13px;cursor:pointer;font-family:'Inter',sans-serif;transition:all .14s}
 .cart-continue:hover{border-color:var(--ink);color:var(--ink)}
-.cart-close{width:30px;height:30px;border:1px solid var(--border);background:var(--bg);border-radius:var(--r-sm);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center}
-.cart-items{flex:1;overflow-y:auto;padding:16px 22px}
-.cart-empty{text-align:center;padding:40px 0;color:var(--ink3);font-size:14px}
-.cart-item{display:flex;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid var(--border)}
-.cart-item-img{width:60px;height:60px;object-fit:cover;border-radius:var(--r-sm);flex-shrink:0;background:#f0ede8}
-.cart-item-info{flex:1;min-width:0}
-.cart-item-name{font-size:13px;font-weight:500;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.cart-item-size{font-size:11px;color:var(--ink3);font-family:'DM Mono',monospace;margin-top:2px}
-.cart-item-price{font-size:13px;font-weight:600;color:var(--ink);margin-top:3px;font-family:'DM Mono',monospace}
-.cart-item-remove{background:none;border:none;color:var(--ink3);cursor:pointer;font-size:13px;padding:4px;transition:color .14s}
-.cart-item-remove:hover{color:var(--ink)}
-.cart-footer{padding:18px 22px;border-top:1px solid var(--border)}
-.cart-total-row{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:14px}
-.cart-total-lbl{font-weight:600;font-size:14px}
-.cart-total-val{font-family:'Playfair Display',serif;font-size:20px;font-weight:500}
-.cart-checkout{width:100%;padding:13px;background:var(--ink);color:#fff;border:none;border-radius:var(--r-sm);font-size:14px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;display:flex;align-items:center;justify-content:center;gap:8px;transition:background .14s}
-.cart-checkout:hover{background:#333}
-
-
+.cart-view-page{width:100%;padding:10px;background:transparent;color:var(--ink2);border:1px solid var(--border);border-radius:var(--r-sm);font-size:12px;cursor:pointer;font-family:'Inter',sans-serif;transition:all .14s;display:none;align-items:center;justify-content:center;gap:6px;margin-bottom:8px}
+.cart-view-page:hover{border-color:var(--ink);color:var(--ink)}
+/* ── CART PAGE ── */
+.cart-page-layout{display:grid;grid-template-columns:1fr 360px;gap:32px;align-items:start;max-width:1000px;margin:0 auto}
+.cart-page-list{display:flex;flex-direction:column;gap:12px}
+.cart-page-item{display:grid;grid-template-columns:80px 1fr auto auto;gap:16px;align-items:center;padding:16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r)}
+.cart-page-img{width:80px;height:80px;object-fit:cover;border-radius:var(--r-sm);background:var(--bg)}
+.cart-page-info{min-width:0}
+.cart-page-price{font-family:'Playfair Display',serif;font-size:18px;font-weight:500;color:var(--ink);white-space:nowrap}
+.cart-summary-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:24px;position:sticky;top:90px}
+.cart-summary-title{font-family:'Playfair Display',serif;font-size:18px;margin-bottom:16px;color:var(--ink)}
+.cart-summary-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;font-size:14px;color:var(--ink2)}
+.cart-summary-divider{border:none;border-top:1px solid var(--border);margin:12px 0}
+.cart-summary-total{font-size:16px;font-weight:700;color:var(--ink)}
+body.dark .cart-page-item{background:#1a1a1a;border-color:#2a2a2a}
+body.dark .cart-summary-box{background:#1a1a1a;border-color:#2a2a2a}
+body.dark .cart-view-page{border-color:#2a2a2a;color:#b0b0b0}
+@media(max-width:768px){.cart-page-layout{grid-template-columns:1fr}.cart-summary-box{position:static}}
 
 /* ── TOAST ── */
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(60px);background:var(--ink);color:#fff;padding:10px 20px;border-radius:20px;font-size:13px;font-weight:500;z-index:999;opacity:0;transition:all .22s;pointer-events:none}
@@ -1945,12 +1978,72 @@ body.dark .shop-topbar-wrap{background:transparent}
         <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81 19.79 19.79 0 01.08 1.18 2 2 0 012.06 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
         Envoyer ma commande
       </button>
+      <button class="cart-view-page" id="cart-view-page-btn" style="display:none" onclick="closeCart();showPage('cart')">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        Voir le récapitulatif complet
+      </button>
       <button class="cart-continue" onclick="closeCart()">Continuer mes achats</button>
     </div>
   </div>
 </div>
 
 <div class="toast" id="toast"></div>
+<!-- ══ CART PAGE ══ -->
+<div class="page" id="page-cart">
+  <div class="page-content">
+    <div class="section">
+      <div class="section-hdr">
+        <div class="section-eyebrow">Mon panier</div>
+        <h2 class="section-title">Récapitulatif de commande</h2>
+      </div>
+      <div class="cart-page-layout">
+        <!-- Items -->
+        <div class="cart-page-list" id="cart-page-items"></div>
+        <!-- Summary -->
+        <div class="cart-page-summary">
+          <div class="cart-summary-box">
+            <h3 class="cart-summary-title">Résumé</h3>
+            <div class="cart-summary-row">
+              <span>Sous-total</span>
+              <span id="cart-page-total">0.00 €</span>
+            </div>
+            <div class="cart-summary-row">
+              <span>Livraison</span>
+              <span style="color:var(--gold)">Offerte</span>
+            </div>
+            <div class="cart-summary-divider"></div>
+            <div class="cart-summary-row cart-summary-total">
+              <span>Total</span>
+              <span id="cart-page-total-2">0.00 €</span>
+            </div>
+            <p style="font-size:11px;color:var(--ink3);margin:12px 0;line-height:1.6">Le paiement se confirme par message. Je vous recontacte sous 24h pour confirmer et organiser le paiement.</p>
+            <button class="cart-checkout" id="cart-page-checkout-btn" style="display:none" onclick="checkoutCart()">
+              <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81 19.79 19.79 0 01.08 1.18 2 2 0 012.06 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+              Envoyer ma commande
+            </button>
+            <button onclick="showPage('shop')" class="cart-continue" style="margin-top:8px">← Continuer mes achats</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-logo footer-logo-link">Adri <em>Mods</em></div>
+      <div class="footer-sub">Montres Seiko Mod sélectionnées</div>
+      <div class="footer-links">
+        <span class="footer-link" onclick="showPage('home')">Accueil</span>
+        <span class="footer-link" onclick="showPage('shop')">Boutique</span>
+        <span class="footer-link" onclick="showPage('custom')">Commande personnalisée</span>
+        <span class="footer-link" onclick="showPage('about')">À propos</span>
+        <span class="footer-link" onclick="showPage('contact')">Contact</span>
+        <span class="footer-link" onclick="showPage('faq')">FAQ & CGV</span>
+      </div>
+      <div class="footer-copy">© 2025 Adri Mods — Tous droits réservés</div>
+    </div>
+  </footer>
+</div>
+
 <!-- ══ LOGIN ══ -->
 <div class="page" id="page-login">
   <div class="page-content">
