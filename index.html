@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Adri Mods — Seiko Mod Watches</title>
-<meta name="description" content="Montres Seiko Mod artisanales et boîtes de voyage premium. Chaque mod est assemblé avec passion.">
+<meta name="description" content="Montres Seiko Mod sélectionnées et boîtes de voyage premium. Chaque mod est assemblé avec passion.">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 <script>
@@ -311,13 +311,100 @@ async function loadReviewsForProduct(productId) {
   const el = document.getElementById('pm-reviews-list'); if(!el) return;
   el.innerHTML = '<div class="rv-loading">Chargement des avis…</div>';
   try {
-    const q = query(collection(db,'reviews'), where('productId','==',productId), orderBy('ts','desc'));
-    const snap = await getDocs(q);
-    const reviews = snap.docs.map(d=>({id:d.id,...d.data()}));
+    // Simple query without orderBy to avoid needing a composite index
+    const snap = await getDocs(query(collection(db,'reviews'), where('productId','==',productId)));
+    const reviews = snap.docs.map(d=>({id:d.id,...d.data()}))
+      .sort((a,b)=>(b.ts||0)-(a.ts||0));
     renderReviewsList(el, reviews, productId);
   } catch(e) {
-    el.innerHTML = '<div class="rv-loading">Impossible de charger les avis.</div>';
+    // Fallback: show form even if reviews can't load
+    renderReviewsList(el, [], productId);
   }
+}
+
+function renderReviewsList(el, reviews, productId) {
+  const avg = reviews.length ? (reviews.reduce((a,r)=>a+(r.rating||5),0)/reviews.length).toFixed(1) : null;
+  el.innerHTML = `
+    <div class="rv-header">
+      <div class="rv-title">Avis clients${avg?` · <span class="rv-avg">★ ${avg}</span> (${reviews.length})`:reviews.length?` (${reviews.length})`:''}</div>
+      <button class="rv-add-btn" onclick="toggleReviewForm('${productId}')">+ Laisser un avis</button>
+    </div>
+    <div class="rv-form-wrap" id="rv-form-${productId}" style="display:none">
+      <div class="rv-form">
+        <div class="rv-stars-input" id="rv-stars-${productId}">
+          ${[1,2,3,4,5].map(i=>`<span class="rv-star" data-val="${i}" onclick="setRating('${productId}',${i})">★</span>`).join('')}
+        </div>
+        <input class="rv-input" id="rv-name-${productId}" placeholder="Votre prénom" maxlength="30">
+        <textarea class="rv-textarea" id="rv-text-${productId}" placeholder="Votre avis…" maxlength="400" rows="3"></textarea>
+        <button class="rv-submit-btn" onclick="submitReview('${productId}')">Publier mon avis</button>
+      </div>
+    </div>
+    <div class="rv-list">
+      ${reviews.length ? reviews.map(r=>`
+        <div class="rv-item">
+          <div class="rv-item-header">
+            <span class="rv-item-stars">${'★'.repeat(r.rating||5)}</span>
+            <span class="rv-item-name">${r.name||'Anonyme'}</span>
+            <span class="rv-item-date">${r.ts ? new Date(r.ts).toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'}) : ''}</span>
+          </div>
+          <div class="rv-item-text">${r.text||''}</div>
+        </div>`).join('') : '<div class="rv-empty">Soyez le premier à laisser un avis !</div>'}
+    </div>`;
+  setRating(productId, 5);
+}
+
+let currentRating = {};
+window.setRating = function(productId, val) {
+  currentRating[productId] = val;
+  const stars = document.querySelectorAll(`#rv-stars-${productId} .rv-star`);
+  stars.forEach(s=>s.classList.toggle('active', parseInt(s.dataset.val)<=val));
+};
+
+window.toggleReviewForm = function(productId) {
+  const f=document.getElementById(`rv-form-${productId}`);
+  if(f) f.style.display = f.style.display==='none' ? 'block' : 'none';
+};
+
+window.submitReview = async function(productId) {
+  const name = document.getElementById(`rv-name-${productId}`)?.value.trim();
+  const text = document.getElementById(`rv-text-${productId}`)?.value.trim();
+  const rating = currentRating[productId] || 5;
+  if(!name) { alert('Veuillez entrer votre prénom.'); return; }
+  if(!text || text.length < 10) { alert('Votre avis doit faire au moins 10 caractères.'); return; }
+  const btn = document.querySelector(`#rv-form-${productId} .rv-submit-btn`);
+  if(btn) { btn.textContent='Publication…'; btn.disabled=true; }
+  try {
+    await addDoc(collection(db,'reviews'), { productId, name, text, rating, ts: Date.now() });
+    await loadReviewsForProduct(productId);
+    loadAllReviews();
+  } catch(e) {
+    alert('Erreur lors de la publication. Réessayez.');
+    if(btn){btn.textContent='Publier mon avis';btn.disabled=false;}
+  }
+};
+
+// Load all reviews for homepage
+async function loadAllReviews() {
+  const el = document.getElementById('home-reviews-list'); if(!el) return;
+  try {
+    const snap = await getDocs(collection(db,'reviews'));
+    const reviews = snap.docs.map(d=>({id:d.id,...d.data()}))
+      .sort((a,b)=>(b.ts||0)-(a.ts||0));
+    if(!reviews.length) {
+      el.innerHTML=`<div class="reviews-empty"><div class="reviews-empty-icon">⭐</div><div class="reviews-empty-text">Les premiers avis arrivent bientôt.<br>Laissez votre avis sur la fiche d'un produit !</div></div>`;
+      return;
+    }
+    const latest = reviews.slice(0,3);
+    el.innerHTML = `<div class="reviews-grid">${latest.map(r=>{
+      const prod = allProducts.find(p=>p.id===r.productId);
+      return `<div class="review-card">
+        <div class="review-stars">${'★'.repeat(r.rating||5)}</div>
+        <div class="review-text">"${r.text}"</div>
+        <div class="review-author">${r.name||'Anonyme'} <span class="review-date">· ${r.ts?new Date(r.ts).toLocaleDateString('fr-FR',{month:'long',year:'numeric'}):''}</span></div>
+        ${prod?`<div class="review-watch">${prod.name}</div>`:''}
+      </div>`;
+    }).join('')}</div>`;
+  } catch(e) {}
 }
 
 function renderReviewsList(el, reviews, productId) {
@@ -470,7 +557,7 @@ window.openProduct = function(id) {
           </a>`:'<p style="color:#888;font-size:14px;text-align:center">Cette pièce n\'est plus disponible.</p>'}
       </div>
       <div class="pm-guarantee">
-        <div class="pm-g-item">🔧 Assemblé à la main avec soin</div>
+        <div class="pm-g-item">🔧 Sélectionnée et contrôlée avec soin</div>
         <div class="pm-g-item">📦 Livraison soignée partout en Europe</div>
         <div class="pm-g-item">📸 Suivez-nous sur Instagram</div>
       </div>
@@ -1205,13 +1292,23 @@ body.dark .shop-topbar-wrap{background:transparent}
 
 /* Mobile sidebar */
 @media(max-width:900px){
-  .shop-layout{grid-template-columns:1fr;padding:16px}
-  .shop-sidebar{position:static;display:flex;flex-wrap:wrap;gap:20px;padding:14px}
-  .sidebar-section{margin-bottom:0;min-width:140px}
+  .shop-layout{grid-template-columns:1fr;padding:12px;gap:12px}
+  .shop-sidebar{position:static;padding:0;border:none;background:transparent;margin-top:0}
+  .sidebar-toggle{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-sm);cursor:pointer;font-size:13px;font-weight:600;color:var(--ink)}
+  .sidebar-toggle-icon{font-size:16px;transition:transform .2s}
+  .sidebar-toggle.open .sidebar-toggle-icon{transform:rotate(180deg)}
+  .sidebar-inner{display:none;padding:14px;background:var(--surface);border:1px solid var(--border);border-top:none;border-radius:0 0 var(--r-sm) var(--r-sm);flex-wrap:wrap;gap:16px}
+  .sidebar-inner.open{display:flex}
+  .sidebar-section{margin-bottom:0;min-width:130px;flex:1}
   #model-tags{flex-direction:row;flex-wrap:wrap}
   .model-tag{width:auto;display:inline-block}
+  .product-grid{grid-template-columns:repeat(2,1fr);gap:10px}
   .custom-page-grid{grid-template-columns:1fr}
   .cf-row-2{grid-template-columns:1fr}
+}
+@media(min-width:901px){
+  .sidebar-toggle{display:none}
+  .sidebar-inner{display:contents}
 }
 </style>
 </head>
@@ -1273,7 +1370,7 @@ body.dark .shop-topbar-wrap{background:transparent}
   <div class="page-content">
     <section class="hero">
       <div class="hero-eyebrow">Artisan Horloger</div>
-      <h1 class="hero-title">Des montres uniques,<br><em>assemblées avec passion</em></h1>
+      <h1 class="hero-title">Des montres uniques,<br><em>sélectionnées avec passion</em></h1>
       <p class="hero-sub">Chaque mod est construit à la main à partir de mouvements Seiko et de composants premium. Une montre qui vous ressemble.</p>
       <div class="hero-btns">
         <button class="btn-primary" onclick="showPage('shop')">Voir la boutique</button>
@@ -1339,7 +1436,7 @@ body.dark .shop-topbar-wrap{background:transparent}
   <footer class="site-footer">
     <div class="footer-inner">
       <div class="footer-logo">Adri <em>Mods</em></div>
-      <div class="footer-sub">Montres Seiko Mod artisanales</div>
+      <div class="footer-sub">Montres Seiko Mod sélectionnées</div>
       <div class="footer-links">
         <span class="footer-link" onclick="showPage('home')">Accueil</span>
         <span class="footer-link" onclick="showPage('shop')">Boutique</span>
@@ -1359,20 +1456,25 @@ body.dark .shop-topbar-wrap{background:transparent}
     <div class="shop-layout">
       <!-- Sidebar gauche -->
       <aside class="shop-sidebar">
-        <div class="sidebar-section">
-          <div class="sidebar-label">Catégorie</div>
-          <button class="cat-btn active" data-cat="all" onclick="setCategory('all')">Tout</button>
-          <button class="cat-btn" data-cat="watches" onclick="setCategory('watches')">⌚ Montres</button>
-          <button class="cat-btn" data-cat="accessories" onclick="setCategory('accessories')">🎁 Accessoires</button>
-        </div>
-        <div class="sidebar-section" id="sidebar-models-section">
-          <div class="sidebar-label">Modèle</div>
-          <div id="model-tags"></div>
-        </div>
-        <div class="sidebar-section">
-          <div class="sidebar-label">Disponibilité</div>
-          <button class="stock-btn" data-stock="stock" onclick="setStock('stock')">✅ En stock</button>
-          <button class="stock-btn" data-stock="commande" onclick="setStock('commande')">🕐 En commande</button>
+        <button class="sidebar-toggle" onclick="this.classList.toggle('open');document.getElementById('sidebar-inner').classList.toggle('open')">
+          🔍 Filtrer les montres <span class="sidebar-toggle-icon">▼</span>
+        </button>
+        <div class="sidebar-inner" id="sidebar-inner">
+          <div class="sidebar-section">
+            <div class="sidebar-label">Catégorie</div>
+            <button class="cat-btn active" data-cat="all" onclick="setCategory('all')">Tout</button>
+            <button class="cat-btn" data-cat="watches" onclick="setCategory('watches')">⌚ Montres</button>
+            <button class="cat-btn" data-cat="accessories" onclick="setCategory('accessories')">🎁 Accessoires</button>
+          </div>
+          <div class="sidebar-section" id="sidebar-models-section">
+            <div class="sidebar-label">Modèle</div>
+            <div id="model-tags"></div>
+          </div>
+          <div class="sidebar-section">
+            <div class="sidebar-label">Disponibilité</div>
+            <button class="stock-btn" data-stock="stock" onclick="setStock('stock')">✅ En stock</button>
+            <button class="stock-btn" data-stock="commande" onclick="setStock('commande')">🕐 En commande</button>
+          </div>
         </div>
       </aside>
       <!-- Grille produits -->
@@ -1400,7 +1502,7 @@ body.dark .shop-topbar-wrap{background:transparent}
   <footer class="site-footer">
     <div class="footer-inner">
       <div class="footer-logo">Adri <em>Mods</em></div>
-      <div class="footer-sub">Montres Seiko Mod artisanales</div>
+      <div class="footer-sub">Montres Seiko Mod sélectionnées</div>
       <div class="footer-links">
         <span class="footer-link" onclick="showPage('home')">Accueil</span>
         <span class="footer-link" onclick="showPage('shop')">Boutique</span>
@@ -1509,7 +1611,7 @@ body.dark .shop-topbar-wrap{background:transparent}
   <footer class="site-footer">
     <div class="footer-inner">
       <div class="footer-logo">Adri <em>Mods</em></div>
-      <div class="footer-sub">Montres Seiko Mod artisanales</div>
+      <div class="footer-sub">Montres Seiko Mod sélectionnées</div>
       <div class="footer-links">
         <span class="footer-link" onclick="showPage('home')">Accueil</span>
         <span class="footer-link" onclick="showPage('shop')">Boutique</span>
@@ -1553,7 +1655,7 @@ body.dark .shop-topbar-wrap{background:transparent}
   <footer class="site-footer">
     <div class="footer-inner">
       <div class="footer-logo">Adri <em>Mods</em></div>
-      <div class="footer-sub">Montres Seiko Mod artisanales</div>
+      <div class="footer-sub">Montres Seiko Mod sélectionnées</div>
       <div class="footer-links">
         <span class="footer-link" onclick="showPage('home')">Accueil</span>
         <span class="footer-link" onclick="showPage('shop')">Boutique</span>
@@ -1658,10 +1760,10 @@ body.dark .shop-topbar-wrap{background:transparent}
           <p><strong>Dernière mise à jour :</strong> Avril 2025</p>
 
           <h3>Article 1 — Identification du vendeur</h3>
-          <p>Adri Mods est une activité de vente en ligne de montres assemblées à la main, exercée par <strong>Adrien Schutters</strong>, particulier domicilié en Belgique. Pour tout contact : via Instagram ou le formulaire de contact du site.</p>
+          <p>Adri Mods est une activité de vente en ligne de montres sélectionnées avec soin, exercée par <strong>Adrien Schutters</strong>, particulier domicilié en Belgique. Pour tout contact : via Instagram ou le formulaire de contact du site.</p>
 
           <h3>Article 2 — Produits</h3>
-          <p>Les montres proposées sont assemblées artisanalement à partir de mouvements Seiko (NH35, NH36, VK63, VK64) et de composants aftermarket (boîtiers, cadrans, bracelets, aiguilles). Ces montres s'inspirent esthétiquement de designs de grandes maisons horlogères mais n'en sont pas des contrefaçons : aucun logo, nom ou marque déposée d'un tiers n'est reproduit sur les produits. Les photos sont représentatives mais de légères variations peuvent exister entre exemplaires.</p>
+          <p>Les montres proposées sont sélectionnées avec soin à partir de mouvements Seiko (NH35, NH36, VK63, VK64) et de composants aftermarket (boîtiers, cadrans, bracelets, aiguilles). Ces montres s'inspirent esthétiquement de designs de grandes maisons horlogères mais n'en sont pas des contrefaçons : aucun logo, nom ou marque déposée d'un tiers n'est reproduit sur les produits. Les photos sont représentatives mais de légères variations peuvent exister entre exemplaires.</p>
 
           <h3>Article 3 — Prix</h3>
           <p>Les prix sont affichés en euros (€) toutes taxes comprises. En tant que vendeur particulier, la TVA n'est pas applicable (régime de franchise). Les frais de livraison sont offerts pour toute destination en Europe.</p>
@@ -1694,7 +1796,7 @@ body.dark .shop-topbar-wrap{background:transparent}
   <footer class="site-footer">
     <div class="footer-inner">
       <div class="footer-logo">Adri <em>Mods</em></div>
-      <div class="footer-sub">Montres Seiko Mod artisanales</div>
+      <div class="footer-sub">Montres Seiko Mod sélectionnées</div>
       <div class="footer-links">
         <span class="footer-link" onclick="showPage('home')">Accueil</span>
         <span class="footer-link" onclick="showPage('shop')">Boutique</span>
@@ -1748,7 +1850,7 @@ body.dark .shop-topbar-wrap{background:transparent}
   <footer class="site-footer">
     <div class="footer-inner">
       <div class="footer-logo">Adri <em>Mods</em></div>
-      <div class="footer-sub">Montres Seiko Mod artisanales</div>
+      <div class="footer-sub">Montres Seiko Mod sélectionnées</div>
       <div class="footer-links">
         <span class="footer-link" onclick="showPage('home')">Accueil</span>
         <span class="footer-link" onclick="showPage('shop')">Boutique</span>
