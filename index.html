@@ -138,13 +138,12 @@ onAuthStateChanged(auth, user => {
 
 window.openAdminModal = function() {
   const modal = document.getElementById('admin-modal');
-  modal.classList.remove('hidden');
+  modal.style.display='flex';
   updateAdminModalState(auth.currentUser);
-  // Focus email input if not logged in
   if(!auth.currentUser) setTimeout(()=>document.getElementById('admin-email-inp')?.focus(), 100);
 };
 window.closeAdminModal = function() {
-  document.getElementById('admin-modal').classList.add('hidden');
+  document.getElementById('admin-modal').style.display='none';
 };
 function updateAdminModalState(user) {
   const loginForm = document.getElementById('admin-login-form');
@@ -1902,7 +1901,7 @@ body.dark .shop-topbar-wrap{background:transparent}
 
 <div class="toast" id="toast"></div>
 <!-- ADMIN LOGIN MODAL -->
-<div id="admin-modal" class="hidden" style="position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:999;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px)">
+<div id="admin-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:999;align-items:center;justify-content:center;backdrop-filter:blur(4px)">
   <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:32px;width:100%;max-width:340px;box-shadow:0 20px 60px rgba(0,0,0,.3)">
     <div style="text-align:center;margin-bottom:20px">
       <div style="font-size:20px;font-weight:700;color:var(--ink)" id="admin-modal-title">Espace admin</div>
