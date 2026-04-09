@@ -286,6 +286,9 @@ window.setModelTag = function(tag) {
 window.setCategory = function(c) {
   activeCategory=c;
   if(c==='accessories') activeModelTag='';
+  // Hide/show model tags section
+  const modelSection = document.getElementById('sidebar-models-section');
+  if(modelSection) modelSection.style.display = c==='accessories' ? 'none' : 'block';
   currentPage=1; renderSidebar(); renderShop();
 };
 
@@ -556,9 +559,9 @@ window.openProduct = function(id) {
           </a>`:'<p style="color:#888;font-size:14px;text-align:center">Cette pièce n\'est plus disponible.</p>'}
       </div>
       <div class="pm-guarantee">
-        <div class="pm-g-item">🔧 ✅ Contrôlée avant expédition</div>
-        <div class="pm-g-item">📦 Livraison soignée partout en Europe</div>
-        <div class="pm-g-item">📸 Suivez-nous sur Instagram</div>
+        <div class="pm-g-item"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Contrôlée avant expédition</div>
+        <div class="pm-g-item"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg> Livraison soignée partout en Europe</div>
+        <div class="pm-g-item">Contactez-nous facilement</div>
       </div>
       <div class="pm-reviews" id="pm-reviews-list">
         <div class="rv-loading">Chargement des avis…</div>
@@ -1337,14 +1340,12 @@ body.dark .shop-topbar-wrap{background:transparent}
         <input class="nav-search" id="nav-search-inp" type="text" placeholder="Rechercher…" oninput="onSearchInput(this.value)" autocomplete="off">
         <div class="search-dropdown hidden" id="search-dropdown"></div>
       </div>
-      <button id="theme-btn" class="nav-theme-btn" onclick="toggleDarkMode()" title="Mode sombre">🌙</button>
-      <button id="admin-nav-btn" class="nav-theme-btn" onclick="showPage('login')" title="Connexion" style="font-size:14px;opacity:.5">🔒</button>
+      <button id="theme-btn" class="nav-theme-btn" onclick="toggleDarkMode()" title="Mode sombre">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+      </button>
+      <button class="nav-cart" onclick="openCart()">
         <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
         <span class="cart-badge" id="cart-badge">0</span>
-      </button>
-      <button class="nav-cta desktop-only" onclick="openSocial(INSTAGRAM)">
-        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><circle cx="12" cy="12" r="4" fill="none"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>
-        Instagram
       </button>
       <!-- Hamburger -->
       <button class="hamburger" id="hamburger-btn" onclick="toggleMobileMenu()" aria-label="Menu">
@@ -1365,10 +1366,7 @@ body.dark .shop-topbar-wrap{background:transparent}
   
   <button class="mobile-nav-link" onclick="showPage('about');closeMobileMenu()">À propos</button>
   <button class="mobile-nav-link" onclick="showPage('contact');closeMobileMenu()">Contact</button>
-  <button class="mobile-nav-instagram" onclick="openSocial(INSTAGRAM);closeMobileMenu()">
-    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1.5" fill="currentColor" stroke="none"/></svg>
-    Instagram
-  </button>
+  
 </div>
 
 <!-- ══ HOME ══ -->
@@ -1386,9 +1384,9 @@ body.dark .shop-topbar-wrap{background:transparent}
     <div class="trust-bar">
       <div class="trust-inner">
         
-        <div class="trust-item"><span>⌚</span> Mouvement Seiko</div>
-        <div class="trust-item"><span>📦</span> Livraison Europe</div>
-        <div class="trust-item"><span>📸</span> Instagram</div>
+        <div class="trust-item"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Mouvement Seiko</div>
+        <div class="trust-item"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg> Livraison Europe</div>
+        <div class="trust-item"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81 19.79 19.79 0 01.08 1.18 2 2 0 012.06 0h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg> Contact</div>
       </div>
     </div>
     <div class="section">
@@ -1423,7 +1421,7 @@ body.dark .shop-topbar-wrap{background:transparent}
         </div>
         <div class="steps">
           <div class="step"><div class="step-num">1</div><div class="step-title">Vous choisissez</div><div class="step-text">Parcourez la boutique ou demandez une création sur mesure selon vos envies.</div></div>
-          <div class="step"><div class="step-num">2</div><div class="step-title">Vous commandez</div><div class="step-text">Un message Instagram suffit. Je confirme ensemble les détails et le paiement.</div></div>
+          <div class="step"><div class="step-num">2</div><div class="step-title">Vous commandez</div><div class="step-text">Contactez-moi via le site. Je confirme les détails et le paiement.</div></div>
           <div class="step"><div class="step-num">3</div><div class="step-title">Vous recevez</div><div class="step-text">Votre montre est expédiée depuis la Belgique partout en Europe. Suivi inclus.</div></div>
         </div>
       </div>
@@ -1451,7 +1449,7 @@ body.dark .shop-topbar-wrap{background:transparent}
         <span class="footer-link" onclick="showPage('contact')">Contact</span>
         <span class="footer-link" onclick="showPage('faq')">FAQ & CGV</span>
       </div>
-      <div class="footer-copy">© 2025 Adri Mods — Tous droits réservés</div>
+      <div class="footer-copy">© 2025 Adri Mods — Tous droits réservés · <span onclick="showPage('login')" style="cursor:pointer;opacity:0.25" id="admin-footer-link">&#x1F512;</span></div>
     </div>
   </footer>
 </div>
@@ -1469,8 +1467,8 @@ body.dark .shop-topbar-wrap{background:transparent}
           <div class="sidebar-section">
             <div class="sidebar-label">Catégorie</div>
             <button class="cat-btn active" data-cat="all" onclick="setCategory('all')">Tout</button>
-            <button class="cat-btn" data-cat="watches" onclick="setCategory('watches')">⌚ Montres</button>
-            <button class="cat-btn" data-cat="accessories" onclick="setCategory('accessories')">🎁 Accessoires</button>
+            <button class="cat-btn" data-cat="watches" onclick="setCategory('watches')">Montres</button>
+            <button class="cat-btn" data-cat="accessories" onclick="setCategory('accessories')">Accessoires</button>
           </div>
           <div class="sidebar-section" id="sidebar-models-section">
             <div class="sidebar-label">Modèle</div>
@@ -1478,8 +1476,8 @@ body.dark .shop-topbar-wrap{background:transparent}
           </div>
           <div class="sidebar-section">
             <div class="sidebar-label">Disponibilité</div>
-            <button class="stock-btn" data-stock="stock" onclick="setStock('stock')">✅ En stock</button>
-            <button class="stock-btn" data-stock="commande" onclick="setStock('commande')">🕐 En commande</button>
+            <button class="stock-btn" data-stock="stock" onclick="setStock('stock')">En stock</button>
+            <button class="stock-btn" data-stock="commande" onclick="setStock('commande')">En commande</button>
           </div>
         </div>
       </aside>
@@ -1517,7 +1515,7 @@ body.dark .shop-topbar-wrap{background:transparent}
         <span class="footer-link" onclick="showPage('contact')">Contact</span>
         <span class="footer-link" onclick="showPage('faq')">FAQ & CGV</span>
       </div>
-      <div class="footer-copy">© 2025 Adri Mods — Tous droits réservés</div>
+      <div class="footer-copy">© 2025 Adri Mods — Tous droits réservés · <span onclick="showPage('login')" style="cursor:pointer;opacity:0.25" id="admin-footer-link">&#x1F512;</span></div>
     </div>
   </footer>
 </div>
@@ -1626,7 +1624,7 @@ body.dark .shop-topbar-wrap{background:transparent}
         <span class="footer-link" onclick="showPage('contact')">Contact</span>
         <span class="footer-link" onclick="showPage('faq')">FAQ & CGV</span>
       </div>
-      <div class="footer-copy">© 2025 Adri Mods — Tous droits réservés</div>
+      <div class="footer-copy">© 2025 Adri Mods — Tous droits réservés · <span onclick="showPage('login')" style="cursor:pointer;opacity:0.25" id="admin-footer-link">&#x1F512;</span></div>
     </div>
   </footer>
 </div>
@@ -1670,7 +1668,7 @@ body.dark .shop-topbar-wrap{background:transparent}
         <span class="footer-link" onclick="showPage('contact')">Contact</span>
         <span class="footer-link" onclick="showPage('faq')">FAQ & CGV</span>
       </div>
-      <div class="footer-copy">© 2025 Adri Mods — Tous droits réservés</div>
+      <div class="footer-copy">© 2025 Adri Mods — Tous droits réservés · <span onclick="showPage('login')" style="cursor:pointer;opacity:0.25" id="admin-footer-link">&#x1F512;</span></div>
     </div>
   </footer>
 </div>
@@ -1811,7 +1809,7 @@ body.dark .shop-topbar-wrap{background:transparent}
         <span class="footer-link" onclick="showPage('contact')">Contact</span>
         <span class="footer-link" onclick="showPage('faq')">FAQ & CGV</span>
       </div>
-      <div class="footer-copy">© 2025 Adri Mods — Tous droits réservés</div>
+      <div class="footer-copy">© 2025 Adri Mods — Tous droits réservés · <span onclick="showPage('login')" style="cursor:pointer;opacity:0.25" id="admin-footer-link">&#x1F512;</span></div>
     </div>
   </footer>
 </div>
@@ -1828,10 +1826,8 @@ body.dark .shop-topbar-wrap{background:transparent}
       <div class="contact-grid">
         <div class="contact-info">
           <h3>Parlons-en</h3>
-          <p>Pour commander, demander un devis ou poser une question — Instagram est le meilleur moyen de me joindre rapidement.</p>
-          <div class="contact-option" onclick="openSocial(INSTAGRAM)" style="margin-bottom:10px">
-            <div class="co-icon" style="background:#E1306C"><svg width="18" height="18" fill="none" stroke="#fff" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1.5" fill="#fff" stroke="none"/></svg></div>
-            <div><div class="contact-option-title">Instagram</div><div class="contact-option-sub">Messages directs</div></div>
+          <p>Pour commander, demander un devis ou poser une question — Contactez-moi via le formulaire ci-contre.</p>
+          
           </div>
 
           <div class="contact-hours">
@@ -1933,7 +1929,7 @@ body.dark .shop-topbar-wrap{background:transparent}
         <span class="footer-link" onclick="showPage('contact')">Contact</span>
         <span class="footer-link" onclick="showPage('faq')">FAQ & CGV</span>
       </div>
-      <div class="footer-copy">© 2025 Adri Mods — Tous droits réservés</div>
+      <div class="footer-copy">© 2025 Adri Mods — Tous droits réservés · <span onclick="showPage('login')" style="cursor:pointer;opacity:0.25" id="admin-footer-link">&#x1F512;</span></div>
     </div>
   </footer>
 </div>
