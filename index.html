@@ -511,13 +511,12 @@ window.toggleDarkMode = function() {
   document.body.classList.toggle('dark');
   const isDark=document.body.classList.contains('dark');
   localStorage.setItem('adrimods-theme',isDark?'dark':'light');
-  const b=document.getElementById('theme-btn'); if(b) b.textContent=isDark?'☀️':'🌙';
+  // SVG button - no emoji to replace
 };
 (function(){
   if(localStorage.getItem('adrimods-theme')==='dark'){
     document.body.classList.add('dark');
     document.addEventListener('DOMContentLoaded',()=>{
-      const b=document.getElementById('theme-btn'); if(b) b.textContent='☀️';
     });
   }
 })();
@@ -605,19 +604,25 @@ function renderCart() {
   const el=document.getElementById('cart-items'); if(!el) return;
   const total=cart.reduce((a,c)=>a+(parseFloat(c.price)||0),0);
   if(!cart.length){
-    el.innerHTML='<div class="cart-empty"><div style="font-size:40px;margin-bottom:12px">🛒</div><div>Votre panier est vide</div></div>';
+    el.innerHTML=`<div class="cart-empty">
+      <svg width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" style="opacity:.3"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+      <div>Votre panier est vide</div>
+      <button onclick="closeCart();showPage('shop')" style="font-size:12px;background:none;border:1px solid var(--border);border-radius:20px;padding:6px 16px;cursor:pointer;color:var(--ink2);font-family:'Inter',sans-serif">Voir la boutique</button>
+    </div>`;
     document.getElementById('cart-total').textContent='0.00 €';
     document.getElementById('cart-checkout-btn').style.display='none';
     return;
   }
   el.innerHTML=cart.map((item,i)=>`<div class="cart-item">
-    <img src="${item.img}" class="cart-item-img">
+    <img src="${item.img}" class="cart-item-img" alt="${item.name}">
     <div class="cart-item-info">
       <div class="cart-item-name">${item.name}</div>
-      ${item.size?`<div class="cart-item-size">${item.size}</div>`:''}
+      ${item.size?`<div class="cart-item-variant">${item.size}</div>`:''}
       <div class="cart-item-price">${parseFloat(item.price).toFixed(2)} €</div>
     </div>
-    <button class="cart-item-remove" onclick="removeFromCart(${i})">✕</button>
+    <button class="cart-item-del" onclick="removeFromCart(${i})" title="Retirer">
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
   </div>`).join('');
   document.getElementById('cart-total').textContent=total.toFixed(2)+' €';
   document.getElementById('cart-checkout-btn').style.display='flex';
@@ -626,7 +631,14 @@ window.openCart = function() { renderCart(); document.getElementById('cart-modal
 window.closeCart = function() { document.getElementById('cart-modal').classList.add('hidden'); document.body.style.overflow=''; };
 window.checkoutCart = function() {
   if(!cart.length) return;
-  window.open(INSTAGRAM,'_blank');
+  // Build cart summary for contact form
+  const summary = cart.map(i=>`- ${i.name}${i.size?' ('+i.size+')':''} — ${parseFloat(i.price).toFixed(2)}€`).join('\n');
+  closeCart();
+  showPage('contact');
+  setTimeout(()=>{
+    const msg = document.getElementById('c-msg');
+    if(msg) msg.value = `Bonjour, je souhaite commander :\n\n${summary}\n\nTotal : ${cart.reduce((a,c)=>a+(parseFloat(c.price)||0),0).toFixed(2)}€`;
+  }, 200);
 };
 
 // ── NAV ───────────────────────────────────────────────────────────────────────
@@ -905,9 +917,29 @@ a{text-decoration:none;color:inherit}
 /* ── CART ── */
 .cart-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:flex;justify-content:flex-end;backdrop-filter:blur(3px)}
 .cart-overlay.hidden{display:none}
-.cart-panel{width:100%;max-width:420px;background:var(--surface);height:100%;display:flex;flex-direction:column;box-shadow:-8px 0 40px rgba(0,0,0,.15)}
-.cart-hdr{padding:20px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
-.cart-hdr h3{font-family:'Playfair Display',serif;font-size:20px}
+.cart-panel{width:100%;max-width:440px;background:var(--surface);height:100%;display:flex;flex-direction:column;box-shadow:-8px 0 40px rgba(0,0,0,.18)}
+.cart-hdr{padding:20px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.cart-hdr h3{font-family:'Playfair Display',serif;font-size:20px;color:var(--ink)}
+.cart-close{background:var(--bg);border:1px solid var(--border);border-radius:var(--r-sm);padding:6px;cursor:pointer;color:var(--ink2);display:flex;align-items:center;justify-content:center;transition:all .14s}
+.cart-close:hover{border-color:var(--ink);color:var(--ink)}
+.cart-items{flex:1;overflow-y:auto;padding:16px 24px;display:flex;flex-direction:column;gap:14px}
+.cart-item{display:grid;grid-template-columns:64px 1fr auto;gap:12px;align-items:center;padding:12px;background:var(--bg);border:1px solid var(--border);border-radius:var(--r-sm)}
+.cart-item-img{width:64px;height:64px;object-fit:cover;border-radius:var(--r-sm);background:var(--border)}
+.cart-item-info{min-width:0}
+.cart-item-name{font-size:13px;font-weight:600;color:var(--ink);line-height:1.3;margin-bottom:3px}
+.cart-item-variant{font-size:11px;color:var(--ink3);margin-bottom:4px}
+.cart-item-price{font-size:15px;font-weight:600;color:var(--ink);font-family:'Playfair Display',serif}
+.cart-item-del{background:none;border:none;color:var(--ink3);cursor:pointer;padding:4px;border-radius:4px;transition:color .14s;display:flex;align-items:center}
+.cart-item-del:hover{color:#c04040}
+.cart-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;flex:1;color:var(--ink3);font-size:14px;padding:40px 0}
+.cart-footer{padding:20px 24px;border-top:1px solid var(--border)}
+.cart-total-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.cart-total-lbl{font-size:14px;font-weight:600;color:var(--ink)}
+.cart-total-val{font-size:22px;font-weight:600;font-family:'Playfair Display',serif;color:var(--ink)}
+.cart-checkout{width:100%;padding:13px;background:var(--ink);color:#fff;border:none;border-radius:var(--r-sm);font-size:14px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;display:flex;align-items:center;justify-content:center;gap:8px;transition:opacity .14s;margin-bottom:8px}
+.cart-checkout:hover{opacity:.88}
+.cart-continue{width:100%;padding:11px;background:transparent;color:var(--ink2);border:1px solid var(--border);border-radius:var(--r-sm);font-size:13px;cursor:pointer;font-family:'Inter',sans-serif;transition:all .14s}
+.cart-continue:hover{border-color:var(--ink);color:var(--ink)}
 .cart-close{width:30px;height:30px;border:1px solid var(--border);background:var(--bg);border-radius:var(--r-sm);cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center}
 .cart-items{flex:1;overflow-y:auto;padding:16px 22px}
 .cart-empty{text-align:center;padding:40px 0;color:var(--ink3);font-size:14px}
@@ -1439,7 +1471,7 @@ body.dark .shop-topbar-wrap{background:transparent}
   </div>
   <footer class="site-footer">
     <div class="footer-inner">
-      <div class="footer-logo">Adri <em>Mods</em></div>
+      <div class="footer-logo" onclick="showPage('login')" style="cursor:default" id="footer-logo-admin">Adri <em>Mods</em></div>
       <div class="footer-sub">Montres Seiko Mod sélectionnées</div>
       <div class="footer-links">
         <span class="footer-link" onclick="showPage('home')">Accueil</span>
@@ -1449,7 +1481,7 @@ body.dark .shop-topbar-wrap{background:transparent}
         <span class="footer-link" onclick="showPage('contact')">Contact</span>
         <span class="footer-link" onclick="showPage('faq')">FAQ & CGV</span>
       </div>
-      <div class="footer-copy">© 2025 Adri Mods — Tous droits réservés · <span onclick="showPage('login')" style="cursor:pointer;opacity:0.25" id="admin-footer-link">&#x1F512;</span></div>
+      <div class="footer-copy">© 2025 Adri Mods — Tous droits réservés</div>
     </div>
   </footer>
 </div>
@@ -1505,7 +1537,7 @@ body.dark .shop-topbar-wrap{background:transparent}
   </div>
   <footer class="site-footer">
     <div class="footer-inner">
-      <div class="footer-logo">Adri <em>Mods</em></div>
+      <div class="footer-logo" onclick="showPage('login')" style="cursor:default" id="footer-logo-admin">Adri <em>Mods</em></div>
       <div class="footer-sub">Montres Seiko Mod sélectionnées</div>
       <div class="footer-links">
         <span class="footer-link" onclick="showPage('home')">Accueil</span>
@@ -1515,7 +1547,7 @@ body.dark .shop-topbar-wrap{background:transparent}
         <span class="footer-link" onclick="showPage('contact')">Contact</span>
         <span class="footer-link" onclick="showPage('faq')">FAQ & CGV</span>
       </div>
-      <div class="footer-copy">© 2025 Adri Mods — Tous droits réservés · <span onclick="showPage('login')" style="cursor:pointer;opacity:0.25" id="admin-footer-link">&#x1F512;</span></div>
+      <div class="footer-copy">© 2025 Adri Mods — Tous droits réservés</div>
     </div>
   </footer>
 </div>
@@ -1614,7 +1646,7 @@ body.dark .shop-topbar-wrap{background:transparent}
   </div>
   <footer class="site-footer">
     <div class="footer-inner">
-      <div class="footer-logo">Adri <em>Mods</em></div>
+      <div class="footer-logo" onclick="showPage('login')" style="cursor:default" id="footer-logo-admin">Adri <em>Mods</em></div>
       <div class="footer-sub">Montres Seiko Mod sélectionnées</div>
       <div class="footer-links">
         <span class="footer-link" onclick="showPage('home')">Accueil</span>
@@ -1624,7 +1656,7 @@ body.dark .shop-topbar-wrap{background:transparent}
         <span class="footer-link" onclick="showPage('contact')">Contact</span>
         <span class="footer-link" onclick="showPage('faq')">FAQ & CGV</span>
       </div>
-      <div class="footer-copy">© 2025 Adri Mods — Tous droits réservés · <span onclick="showPage('login')" style="cursor:pointer;opacity:0.25" id="admin-footer-link">&#x1F512;</span></div>
+      <div class="footer-copy">© 2025 Adri Mods — Tous droits réservés</div>
     </div>
   </footer>
 </div>
@@ -1658,7 +1690,7 @@ body.dark .shop-topbar-wrap{background:transparent}
   </div>
   <footer class="site-footer">
     <div class="footer-inner">
-      <div class="footer-logo">Adri <em>Mods</em></div>
+      <div class="footer-logo" onclick="showPage('login')" style="cursor:default" id="footer-logo-admin">Adri <em>Mods</em></div>
       <div class="footer-sub">Montres Seiko Mod sélectionnées</div>
       <div class="footer-links">
         <span class="footer-link" onclick="showPage('home')">Accueil</span>
@@ -1668,7 +1700,7 @@ body.dark .shop-topbar-wrap{background:transparent}
         <span class="footer-link" onclick="showPage('contact')">Contact</span>
         <span class="footer-link" onclick="showPage('faq')">FAQ & CGV</span>
       </div>
-      <div class="footer-copy">© 2025 Adri Mods — Tous droits réservés · <span onclick="showPage('login')" style="cursor:pointer;opacity:0.25" id="admin-footer-link">&#x1F512;</span></div>
+      <div class="footer-copy">© 2025 Adri Mods — Tous droits réservés</div>
     </div>
   </footer>
 </div>
@@ -1799,7 +1831,7 @@ body.dark .shop-topbar-wrap{background:transparent}
   </div>
   <footer class="site-footer">
     <div class="footer-inner">
-      <div class="footer-logo">Adri <em>Mods</em></div>
+      <div class="footer-logo" onclick="showPage('login')" style="cursor:default" id="footer-logo-admin">Adri <em>Mods</em></div>
       <div class="footer-sub">Montres Seiko Mod sélectionnées</div>
       <div class="footer-links">
         <span class="footer-link" onclick="showPage('home')">Accueil</span>
@@ -1809,7 +1841,7 @@ body.dark .shop-topbar-wrap{background:transparent}
         <span class="footer-link" onclick="showPage('contact')">Contact</span>
         <span class="footer-link" onclick="showPage('faq')">FAQ & CGV</span>
       </div>
-      <div class="footer-copy">© 2025 Adri Mods — Tous droits réservés · <span onclick="showPage('login')" style="cursor:pointer;opacity:0.25" id="admin-footer-link">&#x1F512;</span></div>
+      <div class="footer-copy">© 2025 Adri Mods — Tous droits réservés</div>
     </div>
   </footer>
 </div>
@@ -1851,7 +1883,7 @@ body.dark .shop-topbar-wrap{background:transparent}
   </div>
   <footer class="site-footer">
     <div class="footer-inner">
-      <div class="footer-logo">Adri <em>Mods</em></div>
+      <div class="footer-logo" onclick="showPage('login')" style="cursor:default" id="footer-logo-admin">Adri <em>Mods</em></div>
       <div class="footer-sub">Montres Seiko Mod sélectionnées</div>
       <div class="footer-links">
         <span class="footer-link" onclick="showPage('home')">Accueil</span>
@@ -1861,7 +1893,7 @@ body.dark .shop-topbar-wrap{background:transparent}
         <span class="footer-link" onclick="showPage('contact')">Contact</span>
         <span class="footer-link" onclick="showPage('faq')">FAQ & CGV</span>
       </div>
-      <div class="footer-copy">© 2025 Adri Mods — Tous droits réservés · <span onclick="toggleAdminMode()" style="cursor:pointer;opacity:.3;font-size:10px;user-select:none">⚙</span></div>
+      <div class="footer-copy">© 2025 Adri Mods — Tous droits réservés</div>
     </div>
   </footer>
 </div>
@@ -1877,14 +1909,27 @@ body.dark .shop-topbar-wrap{background:transparent}
 <!-- CART MODAL -->
 <div class="cart-overlay hidden" id="cart-modal" onclick="if(event.target===this)closeCart()">
   <div class="cart-panel">
-    <div class="cart-hdr"><h3>Mon panier</h3><button class="cart-close" onclick="closeCart()">✕</button></div>
+    <div class="cart-hdr">
+      <div style="display:flex;align-items:center;gap:10px">
+        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+        <h3>Mon panier</h3>
+      </div>
+      <button class="cart-close" onclick="closeCart()">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
     <div class="cart-items" id="cart-items"></div>
     <div class="cart-footer">
-      <div class="cart-total-row"><span class="cart-total-lbl">Total</span><span class="cart-total-val" id="cart-total">0.00 €</span></div>
+      <div class="cart-total-row">
+        <span class="cart-total-lbl">Total estimé</span>
+        <span class="cart-total-val" id="cart-total">0.00 €</span>
+      </div>
+      <p style="font-size:11px;color:var(--ink3);text-align:center;margin-bottom:12px">Le paiement se confirme par message — je vous recontacte sous 24h.</p>
       <button class="cart-checkout" id="cart-checkout-btn" style="display:none" onclick="checkoutCart()">
-        <svg width="15" height="15" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
-        Commander via Instagram
+        <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81 19.79 19.79 0 01.08 1.18 2 2 0 012.06 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+        Envoyer ma commande
       </button>
+      <button class="cart-continue" onclick="closeCart()">Continuer mes achats</button>
     </div>
   </div>
 </div>
@@ -1893,45 +1938,29 @@ body.dark .shop-topbar-wrap{background:transparent}
 <!-- ══ LOGIN ══ -->
 <div class="page" id="page-login">
   <div class="page-content">
-    <div class="section" style="min-height:60vh;display:flex;align-items:center;justify-content:center">
+    <div class="section" style="min-height:70vh;display:flex;align-items:center;justify-content:center">
       <div class="login-box" id="login-box">
-        <!-- Form shown when logged out -->
         <div id="login-form-view">
-          <div class="login-icon">🔒</div>
+          <div class="login-icon"><svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg></div>
           <h2 class="login-title">Connexion</h2>
           <p class="login-sub">Espace réservé à l'administrateur du site.</p>
           <div class="cf-group"><label>Email</label><input type="email" id="login-email-inp" placeholder="adrien@exemple.com" onkeydown="if(event.key==='Enter')doAdminLogin()"></div>
           <div class="cf-group"><label>Mot de passe</label><input type="password" id="login-pass-inp" placeholder="••••••••" onkeydown="if(event.key==='Enter')doAdminLogin()"></div>
           <div id="login-err-msg" style="font-size:12px;color:#c04040;min-height:16px;margin-bottom:4px"></div>
           <button class="cf-submit" id="login-submit-btn" onclick="doAdminLogin()">Se connecter</button>
+          <button class="cf-submit" onclick="showPage('home')" style="background:transparent;border:1px solid var(--border);color:var(--ink);margin-top:8px">← Retour</button>
         </div>
-        <!-- Shown when logged in -->
         <div id="login-logged-view" style="display:none;text-align:center">
-          <div class="login-icon">✅</div>
+          <div class="login-icon"><svg width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" style="color:#2a7a4a"><polyline points="20 6 9 17 4 12"/></svg></div>
           <h2 class="login-title">Connecté</h2>
           <p class="login-sub" id="login-logged-email" style="color:var(--gold)"></p>
-          <p style="font-size:13px;color:var(--ink2);margin-bottom:24px">Vous êtes connecté en tant qu'administrateur.<br>Les boutons de modération des avis sont actifs sur tout le site.</p>
+          <p style="font-size:13px;color:var(--ink2);margin-bottom:24px">Vous êtes connecté en tant qu'administrateur.<br>Les boutons de modération des avis sont actifs.</p>
           <button class="cf-submit" onclick="doAdminLogout()" style="background:#c04040">Se déconnecter</button>
           <button class="cf-submit" onclick="showPage('home')" style="background:transparent;border:1px solid var(--border);color:var(--ink);margin-top:8px">← Retour au site</button>
         </div>
       </div>
     </div>
   </div>
-  <footer class="site-footer">
-    <div class="footer-inner">
-      <div class="footer-logo">Adri <em>Mods</em></div>
-      <div class="footer-sub">Montres Seiko Mod sélectionnées</div>
-      <div class="footer-links">
-        <span class="footer-link" onclick="showPage('home')">Accueil</span>
-        <span class="footer-link" onclick="showPage('shop')">Boutique</span>
-        <span class="footer-link" onclick="showPage('custom')">Commande personnalisée</span>
-        <span class="footer-link" onclick="showPage('about')">À propos</span>
-        <span class="footer-link" onclick="showPage('contact')">Contact</span>
-        <span class="footer-link" onclick="showPage('faq')">FAQ & CGV</span>
-      </div>
-      <div class="footer-copy">© 2025 Adri Mods — Tous droits réservés · <span onclick="showPage('login')" style="cursor:pointer;opacity:0.25" id="admin-footer-link">&#x1F512;</span></div>
-    </div>
-  </footer>
 </div>
 
 </body>
