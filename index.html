@@ -353,38 +353,6 @@ function renderReviewsList(el, reviews, productId) {
   setRating(productId, 5);
 }
 
-function renderReviewsList(el, reviews, productId) {
-  const avg = reviews.length ? (reviews.reduce((a,r)=>a+(r.rating||5),0)/reviews.length).toFixed(1) : null;
-  el.innerHTML = `
-    <div class="rv-header">
-      <div class="rv-title">Avis clients${avg?` · <span class="rv-avg">★ ${avg}</span> (${reviews.length})`:' (0)'}</div>
-      <button class="rv-add-btn" onclick="toggleReviewForm('${productId}')">+ Laisser un avis</button>
-    </div>
-    <div class="rv-form-wrap" id="rv-form-${productId}" style="display:none">
-      <div class="rv-form">
-        <div class="rv-stars-input" id="rv-stars-${productId}">
-          ${[1,2,3,4,5].map(i=>`<span class="rv-star" data-val="${i}" onclick="setRating('${productId}',${i})">★</span>`).join('')}
-        </div>
-        <input class="rv-input" id="rv-name-${productId}" placeholder="Votre prénom" maxlength="30">
-        <textarea class="rv-textarea" id="rv-text-${productId}" placeholder="Votre avis…" maxlength="400" rows="3"></textarea>
-        <button class="rv-submit-btn" onclick="submitReview('${productId}')">Publier mon avis</button>
-      </div>
-    </div>
-    <div class="rv-list">
-      ${reviews.length ? reviews.map(r=>`
-        <div class="rv-item">
-          <div class="rv-item-header">
-            <span class="rv-item-stars">${'★'.repeat(r.rating||5)}</span>
-            <span class="rv-item-name">${r.name||'Anonyme'}</span>
-            <span class="rv-item-date">${r.ts ? new Date(r.ts).toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'}) : ''}</span>
-          </div>
-          <div class="rv-item-text">${r.text||''}</div>
-        </div>`).join('') : '<div class="rv-empty">Soyez le premier à laisser un avis !</div>'}
-    </div>`;
-  // Init stars
-  setRating(productId, 5);
-}
-
 let currentRating = {};
 window.setRating = function(productId, val) {
   currentRating[productId] = val;
