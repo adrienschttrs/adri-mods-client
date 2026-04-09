@@ -756,8 +756,8 @@ a{text-decoration:none;color:inherit}
 .nav-cta:hover{background:#333}
 
 /* ── PAGES ── */
-.page{display:none;flex-direction:column;flex:1;min-height:100vh}
-.page.active{display:flex}
+.page{display:none;flex-direction:column}
+.page.active{display:flex;min-height:100vh}
 .page-content{flex:1}
 
 /* ── FOOTER ALWAYS AT BOTTOM ── */
@@ -1897,6 +1897,22 @@ body.dark .shop-topbar-wrap{background:transparent}
       </div>
     </div>
   </div>
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-logo footer-logo-link">Adri <em>Mods</em></div>
+      <div class="footer-sub">Montres Seiko Mod sélectionnées</div>
+      <div class="footer-links">
+        <span class="footer-link" onclick="showPage('home')">Accueil</span>
+        <span class="footer-link" onclick="showPage('shop')">Boutique</span>
+        <span class="footer-link" onclick="showPage('custom')">Commande personnalisée</span>
+        <span class="footer-link" onclick="showPage('about')">À propos</span>
+        <span class="footer-link" onclick="showPage('contact')">Contact</span>
+        <span class="footer-link" onclick="showPage('faq')">FAQ & CGV</span>
+      </div>
+      <div class="footer-copy">© 2025 Adri Mods — Tous droits réservés</div>
+    </div>
+  </footer>
+</div>
 
 <!-- PRODUCT MODAL -->
 <div class="pm-overlay hidden" id="product-modal">
