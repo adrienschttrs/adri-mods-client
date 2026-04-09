@@ -107,7 +107,7 @@ window.removePhoto = function() {
 </script>
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-import { getFirestore, collection, doc, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { getFirestore, collection, doc, addDoc, onSnapshot, query, where, orderBy, getDocs } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 
 const INSTAGRAM   = 'https://instagram.com/adrimods';
 const VINTED      = 'https://www.vinted.be';
@@ -142,6 +142,7 @@ onSnapshot(collection(db,'parts'), snap => {
   renderFeatured();
   updateCartBadge();
   initPriceRange();
+  loadAllReviews();
 }, e=>console.error(e));
 
 // Tags modèles depuis Firebase — temps réel
@@ -303,6 +304,111 @@ document.addEventListener('click', e => {
 });
 
 
+// ── REVIEWS SYSTEM ────────────────────────────────────────────────────────────
+let currentProductId = null;
+
+async function loadReviewsForProduct(productId) {
+  const el = document.getElementById('pm-reviews-list'); if(!el) return;
+  el.innerHTML = '<div class="rv-loading">Chargement des avis…</div>';
+  try {
+    const q = query(collection(db,'reviews'), where('productId','==',productId), orderBy('ts','desc'));
+    const snap = await getDocs(q);
+    const reviews = snap.docs.map(d=>({id:d.id,...d.data()}));
+    renderReviewsList(el, reviews, productId);
+  } catch(e) {
+    el.innerHTML = '<div class="rv-loading">Impossible de charger les avis.</div>';
+  }
+}
+
+function renderReviewsList(el, reviews, productId) {
+  const avg = reviews.length ? (reviews.reduce((a,r)=>a+(r.rating||5),0)/reviews.length).toFixed(1) : null;
+  el.innerHTML = `
+    <div class="rv-header">
+      <div class="rv-title">Avis clients${avg?` · <span class="rv-avg">★ ${avg}</span> (${reviews.length})`:' (0)'}</div>
+      <button class="rv-add-btn" onclick="toggleReviewForm('${productId}')">+ Laisser un avis</button>
+    </div>
+    <div class="rv-form-wrap" id="rv-form-${productId}" style="display:none">
+      <div class="rv-form">
+        <div class="rv-stars-input" id="rv-stars-${productId}">
+          ${[1,2,3,4,5].map(i=>`<span class="rv-star" data-val="${i}" onclick="setRating('${productId}',${i})">★</span>`).join('')}
+        </div>
+        <input class="rv-input" id="rv-name-${productId}" placeholder="Votre prénom" maxlength="30">
+        <textarea class="rv-textarea" id="rv-text-${productId}" placeholder="Votre avis…" maxlength="400" rows="3"></textarea>
+        <button class="rv-submit-btn" onclick="submitReview('${productId}')">Publier mon avis</button>
+      </div>
+    </div>
+    <div class="rv-list">
+      ${reviews.length ? reviews.map(r=>`
+        <div class="rv-item">
+          <div class="rv-item-header">
+            <span class="rv-item-stars">${'★'.repeat(r.rating||5)}</span>
+            <span class="rv-item-name">${r.name||'Anonyme'}</span>
+            <span class="rv-item-date">${r.ts ? new Date(r.ts).toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'}) : ''}</span>
+          </div>
+          <div class="rv-item-text">${r.text||''}</div>
+        </div>`).join('') : '<div class="rv-empty">Soyez le premier à laisser un avis !</div>'}
+    </div>`;
+  // Init stars
+  setRating(productId, 5);
+}
+
+let currentRating = {};
+window.setRating = function(productId, val) {
+  currentRating[productId] = val;
+  const stars = document.querySelectorAll(`#rv-stars-${productId} .rv-star`);
+  stars.forEach(s=>s.classList.toggle('active', parseInt(s.dataset.val)<=val));
+};
+
+window.toggleReviewForm = function(productId) {
+  const f=document.getElementById(`rv-form-${productId}`);
+  if(f) f.style.display = f.style.display==='none' ? 'block' : 'none';
+};
+
+window.submitReview = async function(productId) {
+  const name = document.getElementById(`rv-name-${productId}`)?.value.trim();
+  const text = document.getElementById(`rv-text-${productId}`)?.value.trim();
+  const rating = currentRating[productId] || 5;
+  if(!name) { alert('Veuillez entrer votre prénom.'); return; }
+  if(!text || text.length < 10) { alert('Votre avis doit faire au moins 10 caractères.'); return; }
+  const btn = document.querySelector(`#rv-form-${productId} .rv-submit-btn`);
+  if(btn) { btn.textContent='Publication…'; btn.disabled=true; }
+  try {
+    await addDoc(collection(db,'reviews'), { productId, name, text, rating, ts: Date.now() });
+    await loadReviewsForProduct(productId);
+    loadAllReviews(); // refresh home page
+  } catch(e) {
+    alert('Erreur lors de la publication. Réessayez.');
+    if(btn){btn.textContent='Publier mon avis';btn.disabled=false;}
+  }
+};
+
+// Load all reviews for homepage
+async function loadAllReviews() {
+  const el = document.getElementById('home-reviews-list'); if(!el) return;
+  try {
+    const snap = await getDocs(query(collection(db,'reviews'), orderBy('ts','desc')));
+    const reviews = snap.docs.map(d=>({id:d.id,...d.data()}));
+    if(!reviews.length) {
+      el.innerHTML=`<div class="reviews-empty">
+        <div class="reviews-empty-icon">⭐</div>
+        <div class="reviews-empty-text">Les premiers avis arrivent bientôt.<br>Vous avez acheté une montre ? Laissez votre avis sur la fiche produit !</div>
+      </div>`;
+      return;
+    }
+    // Show latest 3
+    const latest = reviews.slice(0,3);
+    el.innerHTML = `<div class="reviews-grid">${latest.map(r=>{
+      const prod = allProducts.find(p=>p.id===r.productId);
+      return `<div class="review-card">
+        <div class="review-stars">${'★'.repeat(r.rating||5)}</div>
+        <div class="review-text">"${r.text}"</div>
+        <div class="review-author">${r.name||'Anonyme'} <span class="review-date">· ${r.ts?new Date(r.ts).toLocaleDateString('fr-FR',{month:'long',year:'numeric'}):''}</span></div>
+        ${prod?`<div class="review-watch">${prod.name}</div>`:''}
+      </div>`;
+    }).join('')}</div>`;
+  } catch(e) {}
+}
+
 // ── DARK MODE ─────────────────────────────────────────────────────────────────
 window.toggleFaq = function(el) {
   el.classList.toggle('open');
@@ -368,9 +474,14 @@ window.openProduct = function(id) {
         <div class="pm-g-item">📦 Livraison soignée partout en Europe</div>
         <div class="pm-g-item">📸 Suivez-nous sur Instagram</div>
       </div>
+      <div class="pm-reviews" id="pm-reviews-list">
+        <div class="rv-loading">Chargement des avis…</div>
+      </div>
     </div>`;
   document.getElementById('product-modal').classList.remove('hidden');
   document.body.style.overflow='hidden';
+  currentProductId = id;
+  loadReviewsForProduct(id);
 };
 window.selectSize = function(btn) {
   btn.closest('.pm-sizes').querySelectorAll('.size-btn').forEach(b=>b.classList.remove('selected'));
@@ -897,6 +1008,40 @@ body.dark .legal-tab{border-color:#2a2a2a;color:#b0b0b0}
 body.dark .legal-tab.active{background:#f0f0f0;color:#0f0f0f}
 body.dark .legal-block{color:#b0b0b0}
 body.dark .legal-block h3{color:#f0f0f0}
+/* ── REVIEWS UI ── */
+.pm-reviews{border-top:1px solid var(--border);margin-top:20px;padding-top:16px}
+.rv-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.rv-title{font-size:13px;font-weight:700;color:var(--ink);text-transform:uppercase;letter-spacing:.06em}
+.rv-avg{color:var(--gold)}
+.rv-add-btn{font-size:12px;padding:5px 12px;border:1px solid var(--border);border-radius:20px;background:transparent;cursor:pointer;color:var(--ink2);font-family:'Inter',sans-serif;transition:all .14s}
+.rv-add-btn:hover{border-color:var(--ink);color:var(--ink)}
+.rv-form-wrap{margin-bottom:12px}
+.rv-form{display:flex;flex-direction:column;gap:8px;padding:14px;background:var(--bg);border-radius:var(--r-sm);border:1px solid var(--border)}
+.rv-stars-input{display:flex;gap:4px;margin-bottom:4px}
+.rv-star{font-size:22px;cursor:pointer;color:var(--border2);transition:color .1s}
+.rv-star.active{color:#c9a84c}
+.rv-input,.rv-textarea{padding:8px 12px;border:1px solid var(--border);border-radius:var(--r-sm);font-size:13px;font-family:'Inter',sans-serif;background:var(--surface);color:var(--ink);outline:none;width:100%;box-sizing:border-box}
+.rv-textarea{resize:vertical}
+.rv-submit-btn{padding:9px 16px;background:var(--ink);color:#fff;border:none;border-radius:var(--r-sm);font-size:13px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;transition:opacity .14s}
+.rv-submit-btn:hover{opacity:.85}
+.rv-submit-btn:disabled{opacity:.5;cursor:not-allowed}
+.rv-list{display:flex;flex-direction:column;gap:0}
+.rv-item{padding:12px 0;border-bottom:1px solid var(--border)}
+.rv-item:last-child{border-bottom:none}
+.rv-item-header{display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap}
+.rv-item-stars{color:#c9a84c;font-size:13px;letter-spacing:1px}
+.rv-item-name{font-size:13px;font-weight:600;color:var(--ink)}
+.rv-item-date{font-size:11px;color:var(--ink3);margin-left:auto}
+.rv-item-text{font-size:13px;color:var(--ink2);line-height:1.6}
+.rv-empty,.rv-loading{font-size:13px;color:var(--ink3);text-align:center;padding:16px 0}
+body.dark .rv-form{background:#111;border-color:#2a2a2a}
+body.dark .rv-input,body.dark .rv-textarea{background:#1a1a1a;border-color:#2a2a2a;color:#f0f0f0}
+body.dark .rv-item{border-color:#2a2a2a}
+body.dark .rv-item-text{color:#b0b0b0}
+body.dark .pm-reviews{border-color:#2a2a2a}
+body.dark .rv-star{color:#383838}
+body.dark .rv-add-btn{border-color:#2a2a2a;color:#b0b0b0}
+
 body.dark{--bg:#0f0f0f;--surface:#1a1a1a;--border:#2a2a2a;--border2:#383838;--ink:#f0f0f0;--ink2:#b0b0b0;--ink3:#606060;--gold:#c9a84c;--gold-bg:#1a1608;--green:#2a7a4a}
 body.dark .nav{background:rgba(15,15,15,.96)}
 body.dark .hero{background:#0a0a0a}
@@ -1160,9 +1305,11 @@ body.dark .shop-topbar-wrap{background:transparent}
         <h2 class="section-title">Ce qu'ils en pensent</h2>
         <p class="section-sub">Chaque avis est laissé par un vrai client après achat.</p>
       </div>
-      <div class="reviews-empty">
-        <div class="reviews-empty-icon">⭐</div>
-        <div class="reviews-empty-text">Les premiers avis arrivent bientôt.<br>Vous avez acheté une montre ? <span onclick="showPage('contact')" style="color:var(--gold);cursor:pointer;text-decoration:underline">Laissez votre avis ici.</span></div>
+      <div id="home-reviews-list">
+        <div class="reviews-empty">
+          <div class="reviews-empty-icon">⭐</div>
+          <div class="reviews-empty-text">Les premiers avis arrivent bientôt.<br>Laissez votre avis sur la fiche d'un produit !</div>
+        </div>
       </div>
     </div>
     <div style="background:var(--surface);border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
@@ -1511,7 +1658,7 @@ body.dark .shop-topbar-wrap{background:transparent}
           <p><strong>Dernière mise à jour :</strong> Avril 2025</p>
 
           <h3>Article 1 — Identification du vendeur</h3>
-          <p>Adri Mods est une activité de vente en ligne de montres assemblées à la main, exercée par un particulier domicilié en Belgique. Pour tout contact : via Instagram ou le formulaire de contact du site.</p>
+          <p>Adri Mods est une activité de vente en ligne de montres assemblées à la main, exercée par <strong>Adrien Schutters</strong>, particulier domicilié en Belgique. Pour tout contact : via Instagram ou le formulaire de contact du site.</p>
 
           <h3>Article 2 — Produits</h3>
           <p>Les montres proposées sont assemblées artisanalement à partir de mouvements Seiko (NH35, NH36, VK63, VK64) et de composants aftermarket (boîtiers, cadrans, bracelets, aiguilles). Ces montres s'inspirent esthétiquement de designs de grandes maisons horlogères mais n'en sont pas des contrefaçons : aucun logo, nom ou marque déposée d'un tiers n'est reproduit sur les produits. Les photos sont représentatives mais de légères variations peuvent exister entre exemplaires.</p>
