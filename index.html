@@ -128,9 +128,55 @@ let isAdmin = false;
 
 onAuthStateChanged(auth, user => {
   isAdmin = !!user;
-  // Refresh reviews if a product modal is open
+  // Update modal state if open
+  const modal = document.getElementById('admin-modal');
+  if(modal && !modal.classList.contains('hidden')) updateAdminModalState(user);
+  // Refresh current product reviews
   if(currentProductId) loadReviewsForProduct(currentProductId);
 });
+
+window.openAdminModal = function() {
+  const modal = document.getElementById('admin-modal');
+  modal.classList.remove('hidden');
+  updateAdminModalState(auth.currentUser);
+};
+window.closeAdminModal = function() {
+  document.getElementById('admin-modal').classList.add('hidden');
+};
+function updateAdminModalState(user) {
+  const loginForm = document.getElementById('admin-login-form');
+  const loggedForm = document.getElementById('admin-logged-form');
+  const sub = document.getElementById('admin-modal-sub');
+  if(user) {
+    loginForm.style.display='none';
+    loggedForm.style.display='flex';
+    document.getElementById('admin-logged-email').textContent = user.email;
+    if(sub) sub.textContent='Connecté ✓';
+  } else {
+    loginForm.style.display='flex';
+    loggedForm.style.display='none';
+    if(sub) sub.textContent='Connexion administrateur';
+  }
+}
+window.doAdminLogin = async function() {
+  const email = document.getElementById('admin-email-inp').value.trim();
+  const pass  = document.getElementById('admin-pass-inp').value;
+  const err   = document.getElementById('admin-login-err');
+  err.textContent = '';
+  try {
+    const { signInWithEmailAndPassword } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js');
+    await signInWithEmailAndPassword(auth, email, pass);
+    showToast('Connecté en tant qu\'admin ✓');
+  } catch(e) {
+    err.textContent = 'Email ou mot de passe incorrect.';
+  }
+};
+window.doAdminLogout = async function() {
+  const { signOut } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js');
+  await signOut(auth);
+  closeAdminModal();
+  showToast('Déconnecté');
+};
 
 let allProducts = [];
 let activeCategory = 'all';
@@ -152,6 +198,7 @@ onSnapshot(collection(db,'parts'), snap => {
   updateCartBadge();
   initPriceRange();
   loadAllReviews();
+  loadReviewsCache();
 }, e=>console.error(e));
 
 // Tags modèles depuis Firebase — temps réel
@@ -182,10 +229,36 @@ function renderSidebar() {
 function renderModelTags() { renderSidebar(); }
 
 // ── PRODUCT CARD ──────────────────────────────────────────────────────────────
+// ── REVIEWS CACHE ─────────────────────────────────────────────────────────────
+const reviewsCache = {}; // productId → {avg, count}
+
+async function loadReviewsCache() {
+  try {
+    const snap = await getDocs(collection(db,'reviews'));
+    snap.docs.forEach(d => {
+      const r = d.data();
+      if(!reviewsCache[r.productId]) reviewsCache[r.productId] = {sum:0, count:0};
+      reviewsCache[r.productId].sum += (r.rating||5);
+      reviewsCache[r.productId].count++;
+    });
+    // Re-render cards with stars
+    renderShop();
+    renderFeatured();
+  } catch(e) {}
+}
+
 function productCard(p) {
   const sold = p.stock==='vendu';
   const isNew = (Date.now()-(p.ts||0)) < 14*24*3600*1000;
   const isLast = p.stock==='stock' && p.lastPiece;
+  const rv = reviewsCache[p.id];
+  const starsHtml = rv && rv.count > 0
+    ? `<div class="card-stars">
+        <span class="card-stars-gold">${'★'.repeat(Math.round(rv.sum/rv.count))}</span>
+        <span class="card-stars-empty">${'★'.repeat(5-Math.round(rv.sum/rv.count))}</span>
+        <span class="card-stars-count">(${rv.count})</span>
+       </div>`
+    : '';
   return `<div class="product-card${sold?' sold':''}" onclick="openProduct('${p.id}')">
     <div class="card-img-wrap">
       <img src="${p.img}" alt="${p.name}" loading="lazy">
@@ -195,6 +268,7 @@ function productCard(p) {
     </div>
     <div class="card-body">
       <div class="card-name">${p.name}</div>
+      ${starsHtml}
       <div class="card-footer">
         <div class="card-price">${sold?'<span class="sold-price">Vendu</span>':parseFloat(p.price).toFixed(2)+' €'}</div>
         ${!sold?`<button class="card-btn" onclick="event.stopPropagation();addToCart('${p.id}')">+ Panier</button>`:''}
@@ -339,8 +413,13 @@ window.submitReview = async function(productId) {
   if(btn) { btn.textContent='Publication…'; btn.disabled=true; }
   try {
     await addDoc(collection(db,'reviews'), { productId, name, text, rating, ts: Date.now() });
+    // Update cache
+    if(!reviewsCache[productId]) reviewsCache[productId]={sum:0,count:0};
+    reviewsCache[productId].sum += rating;
+    reviewsCache[productId].count++;
     await loadReviewsForProduct(productId);
     loadAllReviews();
+    renderShop(); renderFeatured();
   } catch(e) {
     alert('Erreur lors de la publication. Réessayez.');
     if(btn){btn.textContent='Publier mon avis';btn.disabled=false;}
@@ -984,7 +1063,11 @@ a{text-decoration:none;color:inherit}
   .contact-hours{padding:12px}
 }
 
-.last-badge{position:absolute;top:10px;left:10px;background:#c04040;color:#fff;font-size:10px;font-weight:700;padding:4px 10px;border-radius:20px;letter-spacing:.04em;text-transform:uppercase}
+.card-stars{display:flex;align-items:center;gap:2px;margin-bottom:6px}
+.card-stars-gold{color:#c9a84c;font-size:12px;letter-spacing:1px}
+.card-stars-empty{color:var(--border2);font-size:12px;letter-spacing:1px}
+.card-stars-count{font-size:11px;color:var(--ink3);margin-left:2px}
+body.dark .card-stars-empty{color:#383838}
 .reviews-empty{text-align:center;padding:48px 24px;border:1px dashed var(--border);border-radius:var(--r);max-width:500px;margin:0 auto}
 .reviews-empty-icon{font-size:40px;margin-bottom:12px}
 .reviews-empty-text{font-size:14px;color:var(--ink2);line-height:1.7}
@@ -1371,7 +1454,7 @@ body.dark .shop-topbar-wrap{background:transparent}
         <span class="footer-link" onclick="showPage('contact')">Contact</span>
         <span class="footer-link" onclick="showPage('faq')">FAQ & CGV</span>
       </div>
-      <div class="footer-copy">© 2025 Adri Mods — Tous droits réservés</div>
+      <div class="footer-copy">© 2025 Adri Mods — Tous droits réservés · <span onclick="openAdminModal()" style="cursor:pointer;opacity:.3;font-size:10px" title="Admin">⚙</span></div>
     </div>
   </footer>
 </div>
@@ -1437,7 +1520,7 @@ body.dark .shop-topbar-wrap{background:transparent}
         <span class="footer-link" onclick="showPage('contact')">Contact</span>
         <span class="footer-link" onclick="showPage('faq')">FAQ & CGV</span>
       </div>
-      <div class="footer-copy">© 2025 Adri Mods — Tous droits réservés</div>
+      <div class="footer-copy">© 2025 Adri Mods — Tous droits réservés · <span onclick="openAdminModal()" style="cursor:pointer;opacity:.3;font-size:10px" title="Admin">⚙</span></div>
     </div>
   </footer>
 </div>
@@ -1546,7 +1629,7 @@ body.dark .shop-topbar-wrap{background:transparent}
         <span class="footer-link" onclick="showPage('contact')">Contact</span>
         <span class="footer-link" onclick="showPage('faq')">FAQ & CGV</span>
       </div>
-      <div class="footer-copy">© 2025 Adri Mods — Tous droits réservés</div>
+      <div class="footer-copy">© 2025 Adri Mods — Tous droits réservés · <span onclick="openAdminModal()" style="cursor:pointer;opacity:.3;font-size:10px" title="Admin">⚙</span></div>
     </div>
   </footer>
 </div>
@@ -1590,7 +1673,7 @@ body.dark .shop-topbar-wrap{background:transparent}
         <span class="footer-link" onclick="showPage('contact')">Contact</span>
         <span class="footer-link" onclick="showPage('faq')">FAQ & CGV</span>
       </div>
-      <div class="footer-copy">© 2025 Adri Mods — Tous droits réservés</div>
+      <div class="footer-copy">© 2025 Adri Mods — Tous droits réservés · <span onclick="openAdminModal()" style="cursor:pointer;opacity:.3;font-size:10px" title="Admin">⚙</span></div>
     </div>
   </footer>
 </div>
@@ -1731,7 +1814,7 @@ body.dark .shop-topbar-wrap{background:transparent}
         <span class="footer-link" onclick="showPage('contact')">Contact</span>
         <span class="footer-link" onclick="showPage('faq')">FAQ & CGV</span>
       </div>
-      <div class="footer-copy">© 2025 Adri Mods — Tous droits réservés</div>
+      <div class="footer-copy">© 2025 Adri Mods — Tous droits réservés · <span onclick="openAdminModal()" style="cursor:pointer;opacity:.3;font-size:10px" title="Admin">⚙</span></div>
     </div>
   </footer>
 </div>
@@ -1814,5 +1897,29 @@ body.dark .shop-topbar-wrap{background:transparent}
 </div>
 
 <div class="toast" id="toast"></div>
+<!-- ADMIN LOGIN MODAL -->
+<div id="admin-modal" class="hidden" style="position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:999;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px)">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:32px;width:100%;max-width:340px;box-shadow:0 20px 60px rgba(0,0,0,.3)">
+    <div style="text-align:center;margin-bottom:20px">
+      <div style="font-size:20px;font-weight:700;color:var(--ink)" id="admin-modal-title">Espace admin</div>
+      <div style="font-size:12px;color:var(--ink3);margin-top:4px" id="admin-modal-sub">Connexion administrateur</div>
+    </div>
+    <div id="admin-login-form" style="display:flex;flex-direction:column;gap:10px">
+      <input id="admin-email-inp" type="email" placeholder="Email" onkeydown="if(event.key==='Enter')doAdminLogin()"
+        style="padding:10px 12px;border:1px solid var(--border);border-radius:var(--r-sm);background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;font-size:13px;outline:none">
+      <input id="admin-pass-inp" type="password" placeholder="Mot de passe" onkeydown="if(event.key==='Enter')doAdminLogin()"
+        style="padding:10px 12px;border:1px solid var(--border);border-radius:var(--r-sm);background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;font-size:13px;outline:none">
+      <div id="admin-login-err" style="font-size:12px;color:#c04040;min-height:14px"></div>
+      <button onclick="doAdminLogin()" style="padding:10px;background:var(--ink);color:#fff;border:none;border-radius:var(--r-sm);font-size:13px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif">Se connecter</button>
+    </div>
+    <div id="admin-logged-form" style="display:none;flex-direction:column;gap:10px;text-align:center">
+      <div style="font-size:13px;color:var(--ink2)" id="admin-logged-email"></div>
+      <div style="font-size:12px;color:var(--ink3)">Vous êtes connecté en tant qu'administrateur.<br>Les boutons de modération sont actifs.</div>
+      <button onclick="doAdminLogout()" style="padding:10px;background:#c04040;color:#fff;border:none;border-radius:var(--r-sm);font-size:13px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif">Se déconnecter</button>
+    </div>
+    <button onclick="closeAdminModal()" style="position:absolute;top:12px;right:14px;background:none;border:none;font-size:18px;cursor:pointer;color:var(--ink3)">✕</button>
+  </div>
+</div>
+
 </body>
 </html>
