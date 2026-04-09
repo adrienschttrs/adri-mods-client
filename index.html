@@ -353,60 +353,6 @@ function renderReviewsList(el, reviews, productId) {
   setRating(productId, 5);
 }
 
-let currentRating = {};
-window.setRating = function(productId, val) {
-  currentRating[productId] = val;
-  const stars = document.querySelectorAll(`#rv-stars-${productId} .rv-star`);
-  stars.forEach(s=>s.classList.toggle('active', parseInt(s.dataset.val)<=val));
-};
-
-window.toggleReviewForm = function(productId) {
-  const f=document.getElementById(`rv-form-${productId}`);
-  if(f) f.style.display = f.style.display==='none' ? 'block' : 'none';
-};
-
-window.submitReview = async function(productId) {
-  const name = document.getElementById(`rv-name-${productId}`)?.value.trim();
-  const text = document.getElementById(`rv-text-${productId}`)?.value.trim();
-  const rating = currentRating[productId] || 5;
-  if(!name) { alert('Veuillez entrer votre prénom.'); return; }
-  if(!text || text.length < 10) { alert('Votre avis doit faire au moins 10 caractères.'); return; }
-  const btn = document.querySelector(`#rv-form-${productId} .rv-submit-btn`);
-  if(btn) { btn.textContent='Publication…'; btn.disabled=true; }
-  try {
-    await addDoc(collection(db,'reviews'), { productId, name, text, rating, ts: Date.now() });
-    await loadReviewsForProduct(productId);
-    loadAllReviews();
-  } catch(e) {
-    alert('Erreur lors de la publication. Réessayez.');
-    if(btn){btn.textContent='Publier mon avis';btn.disabled=false;}
-  }
-};
-
-// Load all reviews for homepage
-async function loadAllReviews() {
-  const el = document.getElementById('home-reviews-list'); if(!el) return;
-  try {
-    const snap = await getDocs(collection(db,'reviews'));
-    const reviews = snap.docs.map(d=>({id:d.id,...d.data()}))
-      .sort((a,b)=>(b.ts||0)-(a.ts||0));
-    if(!reviews.length) {
-      el.innerHTML=`<div class="reviews-empty"><div class="reviews-empty-icon">⭐</div><div class="reviews-empty-text">Les premiers avis arrivent bientôt.<br>Laissez votre avis sur la fiche d'un produit !</div></div>`;
-      return;
-    }
-    const latest = reviews.slice(0,3);
-    el.innerHTML = `<div class="reviews-grid">${latest.map(r=>{
-      const prod = allProducts.find(p=>p.id===r.productId);
-      return `<div class="review-card">
-        <div class="review-stars">${'★'.repeat(r.rating||5)}</div>
-        <div class="review-text">"${r.text}"</div>
-        <div class="review-author">${r.name||'Anonyme'} <span class="review-date">· ${r.ts?new Date(r.ts).toLocaleDateString('fr-FR',{month:'long',year:'numeric'}):''}</span></div>
-        ${prod?`<div class="review-watch">${prod.name}</div>`:''}
-      </div>`;
-    }).join('')}</div>`;
-  } catch(e) {}
-}
-
 function renderReviewsList(el, reviews, productId) {
   const avg = reviews.length ? (reviews.reduce((a,r)=>a+(r.rating||5),0)/reviews.length).toFixed(1) : null;
   el.innerHTML = `
