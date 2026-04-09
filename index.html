@@ -107,7 +107,8 @@ window.removePhoto = function() {
 </script>
 <script type="module">
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-import { getFirestore, collection, doc, addDoc, onSnapshot, query, where, orderBy, getDocs } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { getFirestore, collection, doc, addDoc, deleteDoc, onSnapshot, query, where, orderBy, getDocs } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 
 const INSTAGRAM   = 'https://instagram.com/adrimods';
 const VINTED      = 'https://www.vinted.be';
@@ -122,6 +123,14 @@ const app = initializeApp({
   appId:"1:1042287332555:web:6b25cc4a0dc53c38ec9f4e"
 });
 const db = getFirestore(app);
+const auth = getAuth(app);
+let isAdmin = false;
+
+onAuthStateChanged(auth, user => {
+  isAdmin = !!user;
+  // Refresh reviews if a product modal is open
+  if(currentProductId) loadReviewsForProduct(currentProductId);
+});
 
 let allProducts = [];
 let activeCategory = 'all';
@@ -304,7 +313,20 @@ document.addEventListener('click', e => {
 });
 
 
-// ── REVIEWS SYSTEM ────────────────────────────────────────────────────────────
+// ── ADMIN MODE ────────────────────────────────────────────────────────────────
+// Mot de passe stocké uniquement côté client — change-le après déploiement
+window.deleteReview = async function(reviewId, productId) {
+  if(!isAdmin) return;
+  if(!confirm('Supprimer cet avis ?')) return;
+  try {
+    await deleteDoc(doc(db,'reviews',reviewId));
+    await loadReviewsForProduct(productId);
+    loadAllReviews();
+    showToast('Avis supprimé');
+  } catch(e) {
+    alert('Erreur lors de la suppression.');
+  }
+};
 let currentProductId = null;
 
 async function loadReviewsForProduct(productId) {
@@ -348,12 +370,21 @@ function renderReviewsList(el, reviews, productId) {
             <span class="rv-item-date">${r.ts ? new Date(r.ts).toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'}) : ''}</span>
           </div>
           <div class="rv-item-text">${r.text||''}</div>
+          ${isAdmin?`<button onclick="deleteReview('${r.id}','${r.productId}')" style="margin-top:6px;background:none;border:1px solid #c04040;color:#c04040;border-radius:4px;padding:3px 10px;font-size:11px;cursor:pointer;font-family:'Inter',sans-serif">🗑️ Supprimer</button>`:''}
         </div>`).join('') : '<div class="rv-empty">Soyez le premier à laisser un avis !</div>'}
     </div>`;
   setRating(productId, 5);
 }
 
-let currentRating = {};
+window.deleteReview = async function(reviewId, productId) {
+  if(!isAdmin) return;
+  if(!confirm('Supprimer cet avis ?')) return;
+  try {
+    await deleteDoc(doc(db,'reviews',reviewId));
+    await loadReviewsForProduct(productId);
+    loadAllReviews();
+  } catch(e) { alert('Erreur lors de la suppression.'); }
+};
 window.setRating = function(productId, val) {
   currentRating[productId] = val;
   const stars = document.querySelectorAll(`#rv-stars-${productId} .rv-star`);
@@ -1164,9 +1195,12 @@ body.dark .section-eyebrow{color:#808080}
 .shop-topbar-inner2{max-width:1400px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;padding-left:248px}
 body.dark .shop-topbar-wrap{background:transparent}
 .shop-layout{display:grid;grid-template-columns:220px 1fr;gap:28px;max-width:1400px;margin:0 auto;padding:24px 24px;align-items:start}
-.shop-sidebar{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:20px;position:sticky;top:80px}
-.sidebar-section{margin-bottom:24px}
-.sidebar-section:last-child{margin-bottom:0}
+.shop-main{min-width:0}
+.shop-topbar-main{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;height:36px}
+.shop-sidebar{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:20px;position:sticky;top:80px;margin-top:calc(36px + 20px)}
+.sidebar-section{margin-bottom:0;padding-bottom:20px;border-bottom:1px solid var(--border)}
+.sidebar-section+.sidebar-section{padding-top:20px}
+.sidebar-section:last-child{border-bottom:none;padding-bottom:0}
 .sidebar-label{font-size:10px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px}
 .sidebar-section .cat-btn{display:block;width:100%;text-align:left;margin-bottom:6px;border-radius:var(--r-sm);padding:8px 12px}
 .sidebar-section .stock-btn{display:block;width:100%;text-align:left;margin-bottom:6px;padding:8px 12px;border-radius:var(--r-sm);font-size:12px;font-weight:500;cursor:pointer;border:1px solid var(--border);background:var(--bg);color:var(--ink2);transition:all .14s;font-family:'Inter',sans-serif}
@@ -1177,12 +1211,6 @@ body.dark .shop-topbar-wrap{background:transparent}
 .model-tag:hover{background:var(--bg);border-color:var(--border);color:var(--ink)}
 .model-tag.active{background:var(--ink);color:#fff;border-color:var(--ink)}
 .tag-x{font-size:10px;opacity:.7;margin-left:4px}
-.shop-main{min-width:0}
-.shop-topbar-main{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
-.shop-sidebar{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:20px;position:sticky;top:80px;margin-top:76px}
-.sidebar-section{margin-bottom:0;padding-bottom:20px;border-bottom:1px solid var(--border)}
-.sidebar-section+.sidebar-section{padding-top:20px}
-.sidebar-section:last-child{border-bottom:none;padding-bottom:0}
 .shop-grid-wrap{padding:0}
 
 /* ── PAGINATION ── */
@@ -1773,7 +1801,7 @@ body.dark .shop-topbar-wrap{background:transparent}
         <span class="footer-link" onclick="showPage('contact')">Contact</span>
         <span class="footer-link" onclick="showPage('faq')">FAQ & CGV</span>
       </div>
-      <div class="footer-copy">© 2025 Adri Mods — Tous droits réservés</div>
+      <div class="footer-copy">© 2025 Adri Mods — Tous droits réservés · <span onclick="toggleAdminMode()" style="cursor:pointer;opacity:.3;font-size:10px;user-select:none">⚙</span></div>
     </div>
   </footer>
 </div>
