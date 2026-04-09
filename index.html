@@ -128,55 +128,44 @@ let isAdmin = false;
 
 onAuthStateChanged(auth, user => {
   isAdmin = !!user;
-  // Update admin button icon in nav
+  // Update lock icon in nav
   const btn = document.getElementById('admin-nav-btn');
-  if(btn) btn.title = user ? `Admin: ${user.email}` : 'Connexion admin';
-  if(btn) btn.style.opacity = user ? '1' : '0.4';
-  // Refresh current product reviews if modal is open
+  if(btn) { btn.textContent = user ? '🔓' : '🔒'; btn.style.opacity = user ? '1' : '0.5'; }
+  // Update login page if visible
+  const formView = document.getElementById('login-form-view');
+  const loggedView = document.getElementById('login-logged-view');
+  if(formView && loggedView) {
+    if(user) {
+      formView.style.display='none'; loggedView.style.display='block';
+      const el=document.getElementById('login-logged-email'); if(el) el.textContent=user.email;
+    } else {
+      formView.style.display='block'; loggedView.style.display='none';
+    }
+  }
+  // Refresh reviews if product modal open
   if(currentProductId) loadReviewsForProduct(currentProductId);
 });
 
-window.openAdminModal = function() {
-  const modal = document.getElementById('admin-modal');
-  modal.style.display='flex';
-  updateAdminModalState(auth.currentUser);
-  if(!auth.currentUser) setTimeout(()=>document.getElementById('admin-email-inp')?.focus(), 100);
-};
-window.closeAdminModal = function() {
-  document.getElementById('admin-modal').style.display='none';
-};
-function updateAdminModalState(user) {
-  const loginForm = document.getElementById('admin-login-form');
-  const loggedForm = document.getElementById('admin-logged-form');
-  const sub = document.getElementById('admin-modal-sub');
-  if(user) {
-    loginForm.style.display='none';
-    loggedForm.style.display='flex';
-    document.getElementById('admin-logged-email').textContent = user.email;
-    if(sub) sub.textContent='Connecté ✓';
-  } else {
-    loginForm.style.display='flex';
-    loggedForm.style.display='none';
-    if(sub) sub.textContent='Connexion administrateur';
-  }
-}
 window.doAdminLogin = async function() {
-  const email = document.getElementById('admin-email-inp').value.trim();
-  const pass  = document.getElementById('admin-pass-inp').value;
-  const err   = document.getElementById('admin-login-err');
-  err.textContent = '';
+  const email = document.getElementById('login-email-inp')?.value.trim();
+  const pass  = document.getElementById('login-pass-inp')?.value;
+  const err   = document.getElementById('login-err-msg');
+  const btn   = document.getElementById('login-submit-btn');
+  if(err) err.textContent='';
+  if(btn) { btn.textContent='Connexion…'; btn.disabled=true; }
   try {
     const { signInWithEmailAndPassword } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js');
     await signInWithEmailAndPassword(auth, email, pass);
     showToast('Connecté en tant qu\'admin ✓');
   } catch(e) {
-    err.textContent = 'Email ou mot de passe incorrect.';
+    if(err) err.textContent='Email ou mot de passe incorrect.';
+    if(btn) { btn.textContent='Se connecter'; btn.disabled=false; }
   }
 };
+
 window.doAdminLogout = async function() {
   const { signOut } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js');
   await signOut(auth);
-  closeAdminModal();
   showToast('Déconnecté');
 };
 
@@ -1109,7 +1098,12 @@ body.dark .legal-tab{border-color:#2a2a2a;color:#b0b0b0}
 body.dark .legal-tab.active{background:#f0f0f0;color:#0f0f0f}
 body.dark .legal-block{color:#b0b0b0}
 body.dark .legal-block h3{color:#f0f0f0}
-/* ── REVIEWS UI ── */
+/* ── LOGIN PAGE ── */
+.login-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:40px;width:100%;max-width:400px}
+.login-icon{font-size:36px;text-align:center;margin-bottom:16px}
+.login-title{font-family:'Playfair Display',serif;font-size:24px;font-weight:500;text-align:center;color:var(--ink);margin-bottom:8px}
+.login-sub{font-size:14px;color:var(--ink3);text-align:center;margin-bottom:24px}
+body.dark .login-box{background:#1a1a1a;border-color:#2a2a2a}
 .pm-reviews{border-top:1px solid var(--border);margin-top:20px;padding-top:16px}
 .rv-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
 .rv-title{font-size:13px;font-weight:700;color:var(--ink);text-transform:uppercase;letter-spacing:.06em}
@@ -1344,7 +1338,7 @@ body.dark .shop-topbar-wrap{background:transparent}
         <div class="search-dropdown hidden" id="search-dropdown"></div>
       </div>
       <button id="theme-btn" class="nav-theme-btn" onclick="toggleDarkMode()" title="Mode sombre">🌙</button>
-      <button id="admin-nav-btn" class="nav-theme-btn" onclick="openAdminModal()" title="Connexion admin" style="opacity:.4;font-size:14px">🔒</button>
+      <button id="admin-nav-btn" class="nav-theme-btn" onclick="showPage('login')" title="Connexion" style="font-size:14px;opacity:.5">🔒</button>
         <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
         <span class="cart-badge" id="cart-badge">0</span>
       </button>
@@ -1900,28 +1894,48 @@ body.dark .shop-topbar-wrap{background:transparent}
 </div>
 
 <div class="toast" id="toast"></div>
-<!-- ADMIN LOGIN MODAL -->
-<div id="admin-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:999;align-items:center;justify-content:center;backdrop-filter:blur(4px)">
-  <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:32px;width:100%;max-width:340px;box-shadow:0 20px 60px rgba(0,0,0,.3)">
-    <div style="text-align:center;margin-bottom:20px">
-      <div style="font-size:20px;font-weight:700;color:var(--ink)" id="admin-modal-title">Espace admin</div>
-      <div style="font-size:12px;color:var(--ink3);margin-top:4px" id="admin-modal-sub">Connexion administrateur</div>
+<!-- ══ LOGIN ══ -->
+<div class="page" id="page-login">
+  <div class="page-content">
+    <div class="section" style="min-height:60vh;display:flex;align-items:center;justify-content:center">
+      <div class="login-box" id="login-box">
+        <!-- Form shown when logged out -->
+        <div id="login-form-view">
+          <div class="login-icon">🔒</div>
+          <h2 class="login-title">Connexion</h2>
+          <p class="login-sub">Espace réservé à l'administrateur du site.</p>
+          <div class="cf-group"><label>Email</label><input type="email" id="login-email-inp" placeholder="adrien@exemple.com" onkeydown="if(event.key==='Enter')doAdminLogin()"></div>
+          <div class="cf-group"><label>Mot de passe</label><input type="password" id="login-pass-inp" placeholder="••••••••" onkeydown="if(event.key==='Enter')doAdminLogin()"></div>
+          <div id="login-err-msg" style="font-size:12px;color:#c04040;min-height:16px;margin-bottom:4px"></div>
+          <button class="cf-submit" id="login-submit-btn" onclick="doAdminLogin()">Se connecter</button>
+        </div>
+        <!-- Shown when logged in -->
+        <div id="login-logged-view" style="display:none;text-align:center">
+          <div class="login-icon">✅</div>
+          <h2 class="login-title">Connecté</h2>
+          <p class="login-sub" id="login-logged-email" style="color:var(--gold)"></p>
+          <p style="font-size:13px;color:var(--ink2);margin-bottom:24px">Vous êtes connecté en tant qu'administrateur.<br>Les boutons de modération des avis sont actifs sur tout le site.</p>
+          <button class="cf-submit" onclick="doAdminLogout()" style="background:#c04040">Se déconnecter</button>
+          <button class="cf-submit" onclick="showPage('home')" style="background:transparent;border:1px solid var(--border);color:var(--ink);margin-top:8px">← Retour au site</button>
+        </div>
+      </div>
     </div>
-    <div id="admin-login-form" style="display:flex;flex-direction:column;gap:10px">
-      <input id="admin-email-inp" type="email" placeholder="Email" onkeydown="if(event.key==='Enter')doAdminLogin()"
-        style="padding:10px 12px;border:1px solid var(--border);border-radius:var(--r-sm);background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;font-size:13px;outline:none">
-      <input id="admin-pass-inp" type="password" placeholder="Mot de passe" onkeydown="if(event.key==='Enter')doAdminLogin()"
-        style="padding:10px 12px;border:1px solid var(--border);border-radius:var(--r-sm);background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;font-size:13px;outline:none">
-      <div id="admin-login-err" style="font-size:12px;color:#c04040;min-height:14px"></div>
-      <button onclick="doAdminLogin()" style="padding:10px;background:var(--ink);color:#fff;border:none;border-radius:var(--r-sm);font-size:13px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif">Se connecter</button>
-    </div>
-    <div id="admin-logged-form" style="display:none;flex-direction:column;gap:10px;text-align:center">
-      <div style="font-size:13px;color:var(--ink2)" id="admin-logged-email"></div>
-      <div style="font-size:12px;color:var(--ink3)">Vous êtes connecté en tant qu'administrateur.<br>Les boutons de modération sont actifs.</div>
-      <button onclick="doAdminLogout()" style="padding:10px;background:#c04040;color:#fff;border:none;border-radius:var(--r-sm);font-size:13px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif">Se déconnecter</button>
-    </div>
-    <button onclick="closeAdminModal()" style="position:absolute;top:12px;right:14px;background:none;border:none;font-size:18px;cursor:pointer;color:var(--ink3)">✕</button>
   </div>
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-logo">Adri <em>Mods</em></div>
+      <div class="footer-sub">Montres Seiko Mod sélectionnées</div>
+      <div class="footer-links">
+        <span class="footer-link" onclick="showPage('home')">Accueil</span>
+        <span class="footer-link" onclick="showPage('shop')">Boutique</span>
+        <span class="footer-link" onclick="showPage('custom')">Commande personnalisée</span>
+        <span class="footer-link" onclick="showPage('about')">À propos</span>
+        <span class="footer-link" onclick="showPage('contact')">Contact</span>
+        <span class="footer-link" onclick="showPage('faq')">FAQ & CGV</span>
+      </div>
+      <div class="footer-copy">© 2025 Adri Mods — Tous droits réservés</div>
+    </div>
+  </footer>
 </div>
 
 </body>
