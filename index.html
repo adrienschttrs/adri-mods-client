@@ -509,9 +509,8 @@ window.showLegal = function(tab) {
 };
 window.toggleDarkMode = function() {
   document.body.classList.toggle('dark');
-  const isDark=document.body.classList.contains('dark');
-  localStorage.setItem('adrimods-theme',isDark?'dark':'light');
-  // SVG button - no emoji to replace
+  const isDark = document.body.classList.contains('dark');
+  localStorage.setItem('adrimods-theme', isDark ? 'dark' : 'light');
 };
 (function(){
   if(localStorage.getItem('adrimods-theme')==='dark'){
@@ -693,7 +692,15 @@ document.addEventListener('click',e=>{
 document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeProductModal();closeCart();}});
 
 document.addEventListener('DOMContentLoaded', function() {
-  renderModelTags();
+  // Footer logo → login page (discreet)
+  document.querySelectorAll('.footer-logo-link').forEach(el => {
+    el.addEventListener('click', () => showPage('login'));
+  });
+  // Restore dark mode
+  if(localStorage.getItem('adrimods-theme')==='dark'){
+    document.body.classList.add('dark');
+  }
+  // About photo
   const img=document.getElementById('about-img-el');
   if(img&&ABOUT_PHOTO){img.src=ABOUT_PHOTO;img.style.display='block';document.getElementById('about-icon-fallback').style.display='none';}
 });
@@ -749,7 +756,7 @@ a{text-decoration:none;color:inherit}
 .nav-cta:hover{background:#333}
 
 /* ── PAGES ── */
-.page{display:none;flex-direction:column;flex:1}
+.page{display:none;flex-direction:column;flex:1;min-height:100vh}
 .page.active{display:flex}
 .page-content{flex:1}
 
@@ -758,6 +765,7 @@ a{text-decoration:none;color:inherit}
 .footer-inner{max-width:1200px;margin:0 auto}
 .footer-logo{font-family:'Playfair Display',serif;font-size:22px;color:#fff;margin-bottom:8px}
 .footer-logo em{font-style:italic;color:#c9a84c}
+.footer-logo-link{cursor:pointer}
 .footer-sub{font-size:13px;margin-bottom:20px}
 .footer-links{display:flex;gap:24px;justify-content:center;flex-wrap:wrap;margin-bottom:24px}
 .footer-link{font-size:13px;color:rgba(255,255,255,.5);cursor:pointer;transition:color .14s}
@@ -1285,8 +1293,15 @@ body.dark .hero-sub{color:rgba(255,255,255,.7)}
 body.dark .section-eyebrow{color:#808080}
 
 /* ── THEME BTN ── */
-.nav-theme-btn{width:36px;height:36px;border-radius:var(--r-sm);border:1px solid var(--border);background:transparent;cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;transition:all .14s}
+.nav-theme-btn{width:36px;height:36px;border-radius:var(--r-sm);border:1px solid var(--border);background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .14s;color:var(--ink)}
 .nav-theme-btn:hover{background:var(--bg);border-color:var(--border2)}
+.icon-moon{display:none}
+.icon-sun{display:block}
+body.dark .icon-moon{display:block}
+body.dark .icon-sun{display:none}
+/* All SVG icons inherit color */
+svg{color:inherit}
+body.dark svg{stroke:currentColor}
 
 /* ── SHOP SIDEBAR LAYOUT ── */
 .shop-topbar-wrap{padding:0 24px 12px 24px}
@@ -1373,7 +1388,8 @@ body.dark .shop-topbar-wrap{background:transparent}
         <div class="search-dropdown hidden" id="search-dropdown"></div>
       </div>
       <button id="theme-btn" class="nav-theme-btn" onclick="toggleDarkMode()" title="Mode sombre">
-        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+        <svg class="icon-sun" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+        <svg class="icon-moon" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
       </button>
       <button class="nav-cart" onclick="openCart()">
         <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
@@ -1471,7 +1487,7 @@ body.dark .shop-topbar-wrap{background:transparent}
   </div>
   <footer class="site-footer">
     <div class="footer-inner">
-      <div class="footer-logo" onclick="showPage('login')" style="cursor:default" id="footer-logo-admin">Adri <em>Mods</em></div>
+      <div class="footer-logo footer-logo-link">Adri <em>Mods</em></div>
       <div class="footer-sub">Montres Seiko Mod sélectionnées</div>
       <div class="footer-links">
         <span class="footer-link" onclick="showPage('home')">Accueil</span>
@@ -1537,7 +1553,7 @@ body.dark .shop-topbar-wrap{background:transparent}
   </div>
   <footer class="site-footer">
     <div class="footer-inner">
-      <div class="footer-logo" onclick="showPage('login')" style="cursor:default" id="footer-logo-admin">Adri <em>Mods</em></div>
+      <div class="footer-logo footer-logo-link">Adri <em>Mods</em></div>
       <div class="footer-sub">Montres Seiko Mod sélectionnées</div>
       <div class="footer-links">
         <span class="footer-link" onclick="showPage('home')">Accueil</span>
@@ -1646,7 +1662,7 @@ body.dark .shop-topbar-wrap{background:transparent}
   </div>
   <footer class="site-footer">
     <div class="footer-inner">
-      <div class="footer-logo" onclick="showPage('login')" style="cursor:default" id="footer-logo-admin">Adri <em>Mods</em></div>
+      <div class="footer-logo footer-logo-link">Adri <em>Mods</em></div>
       <div class="footer-sub">Montres Seiko Mod sélectionnées</div>
       <div class="footer-links">
         <span class="footer-link" onclick="showPage('home')">Accueil</span>
@@ -1690,7 +1706,7 @@ body.dark .shop-topbar-wrap{background:transparent}
   </div>
   <footer class="site-footer">
     <div class="footer-inner">
-      <div class="footer-logo" onclick="showPage('login')" style="cursor:default" id="footer-logo-admin">Adri <em>Mods</em></div>
+      <div class="footer-logo footer-logo-link">Adri <em>Mods</em></div>
       <div class="footer-sub">Montres Seiko Mod sélectionnées</div>
       <div class="footer-links">
         <span class="footer-link" onclick="showPage('home')">Accueil</span>
@@ -1831,7 +1847,7 @@ body.dark .shop-topbar-wrap{background:transparent}
   </div>
   <footer class="site-footer">
     <div class="footer-inner">
-      <div class="footer-logo" onclick="showPage('login')" style="cursor:default" id="footer-logo-admin">Adri <em>Mods</em></div>
+      <div class="footer-logo footer-logo-link">Adri <em>Mods</em></div>
       <div class="footer-sub">Montres Seiko Mod sélectionnées</div>
       <div class="footer-links">
         <span class="footer-link" onclick="showPage('home')">Accueil</span>
@@ -1883,7 +1899,7 @@ body.dark .shop-topbar-wrap{background:transparent}
   </div>
   <footer class="site-footer">
     <div class="footer-inner">
-      <div class="footer-logo" onclick="showPage('login')" style="cursor:default" id="footer-logo-admin">Adri <em>Mods</em></div>
+      <div class="footer-logo footer-logo-link">Adri <em>Mods</em></div>
       <div class="footer-sub">Montres Seiko Mod sélectionnées</div>
       <div class="footer-links">
         <span class="footer-link" onclick="showPage('home')">Accueil</span>
