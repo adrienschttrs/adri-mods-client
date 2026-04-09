@@ -858,7 +858,10 @@ a{text-decoration:none;color:inherit}
 }
 
 .last-badge{position:absolute;top:10px;left:10px;background:#c04040;color:#fff;font-size:10px;font-weight:700;padding:4px 10px;border-radius:20px;letter-spacing:.04em;text-transform:uppercase}
-/* ── REVIEWS ── */
+.reviews-empty{text-align:center;padding:48px 24px;border:1px dashed var(--border);border-radius:var(--r);max-width:500px;margin:0 auto}
+.reviews-empty-icon{font-size:40px;margin-bottom:12px}
+.reviews-empty-text{font-size:14px;color:var(--ink2);line-height:1.7}
+body.dark .reviews-empty{border-color:#2a2a2a}
 .reviews-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:8px}
 .review-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:20px 22px}
 .review-stars{color:#c9a84c;font-size:16px;margin-bottom:8px;letter-spacing:2px}
@@ -1155,27 +1158,11 @@ body.dark .shop-topbar-wrap{background:transparent}
       <div class="section-hdr">
         <div class="section-eyebrow">Avis clients</div>
         <h2 class="section-title">Ce qu'ils en pensent</h2>
-        <p class="section-sub">Des clients satisfaits partout en Europe.</p>
+        <p class="section-sub">Chaque avis est laissé par un vrai client après achat.</p>
       </div>
-      <div class="reviews-grid">
-        <div class="review-card">
-          <div class="review-stars">★★★★★</div>
-          <div class="review-text">"Qualité vraiment impressionnante pour le prix. La montre ressemble exactement aux photos, le mouvement est fluide et l'assemblage parfait. Je recommande sans hésiter !"</div>
-          <div class="review-author">Thomas M. <span class="review-date">· Mars 2025</span></div>
-          <div class="review-watch">GMT Batman - Seiko Mod</div>
-        </div>
-        <div class="review-card">
-          <div class="review-stars">★★★★★</div>
-          <div class="review-text">"Commande reçue en 5 jours, emballage soigné et montre superbe. Le Datejust est bluffant, mes collègues pensaient que c'était une vraie Rolex. Service au top !"</div>
-          <div class="review-author">Sophie L. <span class="review-date">· Février 2025</span></div>
-          <div class="review-watch">Datejust Wimbledon - Seiko Mod</div>
-        </div>
-        <div class="review-card">
-          <div class="review-stars">★★★★★</div>
-          <div class="review-text">"J'ai commandé une Daytona sur mesure et le résultat est au-delà de mes espérances. Adrien est très réactif et à l'écoute. Mon prochain achat sera encore chez lui !"</div>
-          <div class="review-author">Kevin B. <span class="review-date">· Janvier 2025</span></div>
-          <div class="review-watch">Daytona Panda - Seiko Mod</div>
-        </div>
+      <div class="reviews-empty">
+        <div class="reviews-empty-icon">⭐</div>
+        <div class="reviews-empty-text">Les premiers avis arrivent bientôt.<br>Vous avez acheté une montre ? <span onclick="showPage('contact')" style="color:var(--gold);cursor:pointer;text-decoration:underline">Laissez votre avis ici.</span></div>
       </div>
     </div>
     <div style="background:var(--surface);border-top:1px solid var(--border);border-bottom:1px solid var(--border)">
@@ -1404,7 +1391,7 @@ body.dark .shop-topbar-wrap{background:transparent}
           <p>Adri Mods est né d'une passion simple : transformer des mouvements Seiko robustes en montres d'exception originales, à une fraction du prix des grandes marques.</p>
           <p>Chaque mod est assemblé avec soin, avec des composants soigneusement sélectionnés. Le résultat : une montre unique, fiable, et qui raconte votre histoire.</p>
           <p>Que vous cherchiez quelque chose de précis ou que vous vouliez une création sur mesure, nous pouvons créer la montre de vos rêves.</p>
-          <div class="about-hint">💡 Pour changer la photo : uploadez sur Cloudinary, copiez le lien, collez dans la variable <code>ABOUT_PHOTO</code> en haut du fichier HTML.</div>
+          
           <div class="about-tags">
             
             <span class="about-tag">⚙️ Seiko NH / VK</span>
@@ -1488,38 +1475,70 @@ body.dark .shop-topbar-wrap{background:transparent}
       <!-- RETOURS -->
       <div class="legal-section" data-tab="retours" style="display:none">
         <div class="legal-block">
-          <h3>Politique de retour</h3>
-          <p>Votre satisfaction est ma priorité. Si votre montre ne vous convient pas, voici les conditions de retour.</p>
-          <h3>Délai de rétractation</h3>
-          <p>Conformément à la législation belge et européenne, vous disposez de <strong>14 jours</strong> à compter de la réception de votre commande pour exercer votre droit de rétractation, sans avoir à justifier votre décision.</p>
-          <h3>Conditions</h3>
-          <p>Pour être accepté, le retour doit répondre aux conditions suivantes : la montre doit être dans son état d'origine, non portée et complète avec tous ses accessoires. Les montres personnalisées (commandes sur mesure) ne peuvent pas être retournées, sauf défaut de fabrication.</p>
-          <h3>Procédure de retour</h3>
-          <p>Contactez-moi par Instagram ou via le formulaire de contact en indiquant votre nom, la montre concernée et la raison du retour. Je vous confirme la marche à suivre sous 48h. Les frais de retour sont à votre charge sauf en cas de défaut constaté à la réception.</p>
-          <h3>Remboursement</h3>
-          <p>Une fois le retour reçu et vérifié, le remboursement est effectué dans les <strong>14 jours</strong> par le même moyen de paiement que celui utilisé lors de la commande.</p>
-          <h3>Défaut ou casse à la réception</h3>
-          <p>Si votre montre arrive endommagée, prenez des photos immédiatement et contactez-moi dans les 48h. Je prendrai en charge le renvoi ou le remboursement selon votre préférence.</p>
+          <h3>Politique de retour — Adri Mods</h3>
+          <p><strong>Dernière mise à jour :</strong> Avril 2025</p>
+
+          <h3>1. Droit de rétractation légal (14 jours)</h3>
+          <p>Conformément à la directive européenne 2011/83/UE et au Code de droit économique belge (article VI.47), vous disposez d'un délai de <strong>14 jours calendriers</strong> à compter du lendemain de la réception de votre commande pour exercer votre droit de rétractation, sans avoir à justifier votre décision ni à payer de pénalité.</p>
+
+          <h3>2. Exceptions au droit de rétractation</h3>
+          <p>Conformément à l'article VI.53, 3° du Code de droit économique, le droit de rétractation <strong>ne s'applique pas</strong> aux biens confectionnés selon les spécifications du consommateur ou nettement personnalisés — c'est-à-dire toutes les commandes personnalisées (sur mesure).</p>
+
+          <h3>3. Comment exercer votre droit de rétractation</h3>
+          <p>Pour exercer ce droit, vous devez nous notifier votre décision par un message clair via Instagram ou le formulaire de contact avant l'expiration du délai de 14 jours. Vous devez ensuite retourner le produit dans les 14 jours suivant votre notification, dans son état d'origine, non porté, avec tous ses accessoires.</p>
+
+          <h3>4. Frais de retour</h3>
+          <p>Les frais de retour sont à votre charge, sauf dans le cas d'un produit défectueux ou non conforme à la description.</p>
+
+          <h3>5. Remboursement</h3>
+          <p>Une fois le retour reçu et vérifié, le remboursement intégral (prix du produit) est effectué dans les <strong>14 jours calendriers</strong> suivant la réception du retour, via le même moyen de paiement que celui utilisé lors de l'achat.</p>
+
+          <h3>6. Produit défectueux ou non conforme</h3>
+          <p>Si vous recevez un produit endommagé ou non conforme à la description, prenez des photos dans les 48h suivant la réception et contactez-nous immédiatement. Dans ce cas, les frais de retour sont pris en charge et vous avez le choix entre un remplacement ou un remboursement complet.</p>
+
+          <h3>7. État du produit retourné</h3>
+          <p>Tout produit retourné qui aurait été endommagé, porté ou incomplet ne pourra pas être remboursé intégralement. Une décote correspondant à la perte de valeur pourra être appliquée.</p>
+
+          <h3>Contact pour les retours</h3>
+          <p>Instagram ou formulaire de contact du site. Toute demande de retour doit être initiée avant expédition du produit retour.</p>
         </div>
       </div>
 
       <!-- CGV -->
       <div class="legal-section" data-tab="cgv" style="display:none">
         <div class="legal-block">
-          <h3>Conditions Générales de Vente</h3>
-          <p>Les présentes CGV régissent les ventes effectuées via le site adriseikomod.web.app (ci-après "le Site") par Adri Mods, vendeur particulier basé en Belgique.</p>
-          <h3>Produits</h3>
-          <p>Les montres vendues sur ce site sont des montres assemblées à la main par mes soins, utilisant des mouvements Seiko et des composants aftermarket. Elles ne sont pas des produits des marques dont elles s'inspirent esthétiquement, et aucune marque de luxe n'est reproduite sur les montres.</p>
-          <h3>Prix</h3>
-          <p>Les prix sont indiqués en euros toutes taxes comprises (TVA non applicable — régime de franchise en base, article 293B du CGI). Les frais de livraison sont offerts pour toute commande en Europe.</p>
-          <h3>Commande</h3>
-          <p>La commande est validée après échange par message Instagram et confirmation du paiement. Aucun débit n'a lieu avant validation mutuelle de la commande.</p>
-          <h3>Livraison</h3>
-          <p>Les montres sont expédiées dans un emballage sécurisé avec numéro de suivi. Les délais indicatifs sont de 3–5 jours en Belgique/France et 5–10 jours pour le reste de l'Europe.</p>
-          <h3>Responsabilité</h3>
-          <p>Je m'engage à expédier des produits conformes à leur description. En cas de litige, une solution amiable sera recherchée en priorité. Pour tout problème non résolu, le droit belge est applicable.</p>
-          <h3>Contact</h3>
-          <p>Pour toute question relative à ces CGV, contactez-moi via Instagram ou le formulaire de contact du site.</p>
+          <h3>Conditions Générales de Vente — Adri Mods</h3>
+          <p><strong>Dernière mise à jour :</strong> Avril 2025</p>
+
+          <h3>Article 1 — Identification du vendeur</h3>
+          <p>Adri Mods est une activité de vente en ligne de montres assemblées à la main, exercée par un particulier domicilié en Belgique. Pour tout contact : via Instagram ou le formulaire de contact du site.</p>
+
+          <h3>Article 2 — Produits</h3>
+          <p>Les montres proposées sont assemblées artisanalement à partir de mouvements Seiko (NH35, NH36, VK63, VK64) et de composants aftermarket (boîtiers, cadrans, bracelets, aiguilles). Ces montres s'inspirent esthétiquement de designs de grandes maisons horlogères mais n'en sont pas des contrefaçons : aucun logo, nom ou marque déposée d'un tiers n'est reproduit sur les produits. Les photos sont représentatives mais de légères variations peuvent exister entre exemplaires.</p>
+
+          <h3>Article 3 — Prix</h3>
+          <p>Les prix sont affichés en euros (€) toutes taxes comprises. En tant que vendeur particulier, la TVA n'est pas applicable (régime de franchise). Les frais de livraison sont offerts pour toute destination en Europe.</p>
+
+          <h3>Article 4 — Commande et paiement</h3>
+          <p>La commande est finalisée après échange direct (Instagram ou formulaire de contact) et confirmation mutuelle. Le paiement s'effectue par virement bancaire ou PayPal avant expédition. Aucun montant n'est débité sans accord explicite de votre part.</p>
+
+          <h3>Article 5 — Livraison</h3>
+          <p>Les commandes sont expédiées sous 2 à 5 jours ouvrables après réception du paiement. Les délais estimatifs de livraison sont 3–5 jours pour la Belgique et la France, 5–10 jours pour le reste de l'Europe. Ces délais sont indicatifs. En cas de retard significatif, vous en serez informé.</p>
+
+          <h3>Article 6 — Droit de rétractation (consommateurs UE)</h3>
+          <p>Conformément à la directive européenne 2011/83/UE et au Code de droit économique belge, vous disposez d'un délai de <strong>14 jours calendriers</strong> à compter de la réception du produit pour exercer votre droit de rétractation, sans motif. Les frais de retour sont à votre charge. Les articles personnalisés (commandes sur mesure) sont exclus du droit de rétractation conformément à l'article VI.53 du Code de droit économique.</p>
+
+          <h3>Article 7 — Garantie légale</h3>
+          <p>Conformément aux articles 1641 et suivants du Code civil belge, tout acheteur bénéficie de la garantie légale contre les vices cachés. En cas de défaut de conformité constaté à la réception, contactez-nous dans les 48 heures avec photos à l'appui. Une solution de remplacement ou de remboursement sera proposée.</p>
+
+          <h3>Article 8 — Propriété intellectuelle</h3>
+          <p>Les photos et contenus du site sont la propriété d'Adri Mods. Toute reproduction sans autorisation est interdite.</p>
+
+          <h3>Article 9 — Protection des données</h3>
+          <p>Les données personnelles collectées (nom, email) sont utilisées uniquement pour le traitement de votre commande et ne sont jamais cédées à des tiers. Conformément au RGPD, vous disposez d'un droit d'accès, de rectification et de suppression de vos données en nous contactant directement.</p>
+
+          <h3>Article 10 — Droit applicable et litiges</h3>
+          <p>Les présentes CGV sont soumises au droit belge. En cas de litige, une solution amiable sera prioritairement recherchée. En dernier recours, les tribunaux belges sont compétents. En tant que consommateur européen, vous pouvez également recourir à la plateforme de règlement en ligne des litiges : <strong>ec.europa.eu/consumers/odr</strong></p>
         </div>
       </div>
 
@@ -1557,7 +1576,7 @@ body.dark .shop-topbar-wrap{background:transparent}
           <p>Pour commander, demander un devis ou poser une question — Instagram est le meilleur moyen de me joindre rapidement.</p>
           <div class="contact-option" onclick="openSocial(INSTAGRAM)" style="margin-bottom:10px">
             <div class="co-icon" style="background:#E1306C"><svg width="18" height="18" fill="none" stroke="#fff" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1.5" fill="#fff" stroke="none"/></svg></div>
-            <div><div class="contact-option-title">Instagram</div><div class="contact-option-sub">@adrimods · Messages directs</div></div>
+            <div><div class="contact-option-title">Instagram</div><div class="contact-option-sub">Messages directs</div></div>
           </div>
 
           <div class="contact-hours">
