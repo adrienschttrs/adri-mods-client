@@ -975,6 +975,22 @@ window.sendCartOrder = async function() {
     };
     await addDoc(collection(db,'orders'), orderData);
 
+    // ── Notification push (ntfy) ──
+    try {
+      const ntfyMsg = `🛒 Nouvelle commande\n${name} · ${total.toFixed(2)}€\n${cart.map(i=>i.name).join(', ')}`;
+      await fetch('https://ntfy.sh/adrimods-cmd-030607', {
+        method: 'POST',
+        headers: {
+          'Title': `Nouvelle commande — ${total.toFixed(2)}€`,
+          'Priority': 'high',
+          'Tags': 'shopping_cart',
+        },
+        body: ntfyMsg,
+      });
+    } catch(ntfyErr) {
+      console.warn('Ntfy notification failed:', ntfyErr);
+    }
+
     // ── Emails (non bloquant — commande déjà sauvée si ça échoue) ──
     const adminMsg = [
       '── Articles ──────────────────',
