@@ -742,8 +742,10 @@ function renderSecondWatchPromo() {
   const watches = cart.filter(i=>i.sid==='complete');
   if(watches.length !== 1) return '';
   const cartIds = new Set(cart.map(c=>c.id));
-  const suggestions = allProducts.filter(p=>p.sid==='complete'&&p.stock!=='vendu'&&!cartIds.has(p.id)).slice(0,2);
-  if(!suggestions.length) return '';
+  const available = allProducts.filter(p=>p.sid==='complete'&&p.stock!=='vendu'&&!cartIds.has(p.id));
+  if(!available.length) return '';
+  // Shuffle and take 2
+  const shuffled = available.sort(()=>Math.random()-0.5).slice(0,2);
   return `<div class="cart-upsell cart-promo-block">
     <div class="cart-upsell-header">
       <span class="cart-upsell-badge">-20%</span>
@@ -752,7 +754,7 @@ function renderSecondWatchPromo() {
         <div class="cart-upsell-sub">Remise appliquée automatiquement</div>
       </div>
     </div>
-    ${suggestions.map(p=>`
+    ${shuffled.map(p=>`
       <div class="cart-upsell-item">
         <img src="${p.img}" alt="${p.name}" class="cart-upsell-img">
         <div class="cart-upsell-info">
