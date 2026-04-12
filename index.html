@@ -634,25 +634,37 @@ function updateCartBadge() {
   const b=document.getElementById('cart-badge');
   if(b){ b.textContent=cart.length; b.style.display=cart.length?'flex':'none'; }
 }
+let cartView = 'items'; // 'items' | 'checkout'
+
 function renderCart() {
   updateCartBadge();
   const el = document.getElementById('cart-items'); if(!el) return;
+  const footer = document.getElementById('cart-footer-section');
   const total = cart.reduce((a,c)=>a+(parseFloat(c.price)||0),0);
   const count = cart.length;
   const countEl = document.getElementById('cart-hdr-count');
   if(countEl) countEl.textContent = count ? `(${count})` : '';
 
   if(!count){
+    cartView = 'items';
     el.innerHTML=`<div class="cart-empty-state">
       <svg width="52" height="52" fill="none" stroke="currentColor" stroke-width="1.2" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
       <p>Votre panier est vide</p>
-      <small>Ajoutez des montres depuis la boutique</small>
-      <button onclick="closeCart();showPage('shop')" class="cart-btn-checkout" style="width:auto;padding:10px 24px;margin:0">Voir la boutique</button>
+      <small>Retrouvez nos créations dans la boutique</small>
+      <button id="cart-shop-btn" class="cart-btn-checkout" style="width:auto;padding:10px 24px;margin:0">Voir la boutique</button>
     </div>`;
-    document.getElementById('cart-footer-section').style.display='none';
+    footer.style.display='none';
+    document.getElementById('cart-shop-btn').onclick = () => { closeCart(); showPage('shop'); };
     return;
   }
-  document.getElementById('cart-footer-section').style.display='block';
+
+  if(cartView === 'checkout') {
+    renderCartCheckout(total);
+    return;
+  }
+
+  // ── ITEMS VIEW ──
+  footer.style.display='block';
   el.innerHTML = cart.map((item,i)=>`
     <div class="cart-item">
       <img src="${item.img}" class="cart-item-img" alt="${item.name}">
@@ -661,22 +673,107 @@ function renderCart() {
         ${item.size?`<div class="cart-item-variant">${item.size}</div>`:''}
         <div class="cart-item-row">
           <span class="cart-item-price">${parseFloat(item.price).toFixed(2)} €</span>
-          <button class="cart-item-del" onclick="removeFromCart(${i})">Supprimer</button>
+          <button class="cart-item-del" data-idx="${i}">Supprimer</button>
         </div>
       </div>
-    </div>`).join('');
-  document.getElementById('cart-total').textContent = total.toFixed(2)+' €';
+    </div>`).join('') + renderCartUpsell();
+
+  // Upsell and accessories suggestions
+  el.querySelectorAll('.cart-item-del').forEach(btn => {
+    btn.onclick = () => { removeFromCart(parseInt(btn.dataset.idx)); };
+  });
+
+  // Render footer
+  footer.innerHTML = `
+    <div class="cart-subtotal">
+      <span class="cart-subtotal-lbl">Sous-total</span>
+      <span class="cart-subtotal-val" id="cart-total">${total.toFixed(2)} €</span>
+    </div>
+    <div class="cart-shipping-note">Livraison offerte en Europe</div>
+    <button class="cart-btn-checkout" id="cart-to-checkout-btn">Commander →</button>
+    <button class="cart-btn-continue" id="cart-continue-btn">Continuer mes achats</button>`;
+
+  document.getElementById('cart-to-checkout-btn').onclick = () => { cartView='checkout'; renderCart(); };
+  document.getElementById('cart-continue-btn').onclick = closeCart;
   renderCartPage();
 }
+
+function renderCartUpsell() {
+  // Show accessories from allProducts not already in cart
+  const cartIds = new Set(cart.map(c=>c.id));
+  const accessories = allProducts.filter(p => p.sid==='accessoire' && p.stock!=='vendu' && !cartIds.has(p.id)).slice(0,3);
+  if(!accessories.length) return '';
+  return `<div class="cart-upsell">
+    <div class="cart-upsell-title">Complétez votre commande</div>
+    ${accessories.map(p=>`
+      <div class="cart-upsell-item">
+        <img src="${p.img}" alt="${p.name}" class="cart-upsell-img">
+        <div class="cart-upsell-info">
+          <div class="cart-upsell-name">${p.name}</div>
+          <div class="cart-upsell-price">${parseFloat(p.price).toFixed(2)} €</div>
+        </div>
+        <button class="cart-upsell-add" data-id="${p.id}">+</button>
+      </div>`).join('')}
+  </div>`;
+}
+
+function renderCartCheckout(total) {
+  const el = document.getElementById('cart-items');
+  const footer = document.getElementById('cart-footer-section');
+  footer.style.display='block';
+
+  // Summary with photos
+  el.innerHTML = `
+    <div class="cart-checkout-summary">
+      <div class="cart-checkout-title">Récapitulatif</div>
+      ${cart.map(item=>`
+        <div class="cart-checkout-item">
+          <img src="${item.img}" class="cart-checkout-img" alt="${item.name}">
+          <div class="cart-checkout-info">
+            <div class="cart-checkout-name">${item.name}</div>
+            ${item.size?`<div class="cart-checkout-variant">${item.size}</div>`:''}
+          </div>
+          <div class="cart-checkout-price">${parseFloat(item.price).toFixed(2)} €</div>
+        </div>`).join('')}
+      <div class="cart-checkout-total-row">
+        <span>Total</span>
+        <span>${total.toFixed(2)} €</span>
+      </div>
+    </div>`;
+
+  // Attach upsell add buttons
+  el.querySelectorAll('.cart-upsell-add').forEach(btn => {
+    btn.onclick = () => { addToCart(btn.dataset.id); };
+  });
+
+  footer.innerHTML = `
+    <div class="cart-checkout-form">
+      <div class="cart-form-title">Vos coordonnées</div>
+      <input id="co-checkout-name" type="text" placeholder="Prénom et nom" maxlength="60" class="cart-form-input">
+      <input id="co-checkout-email" type="email" placeholder="Adresse email" class="cart-form-input">
+      <div id="co-checkout-err" class="cart-form-err"></div>
+    </div>
+    <div class="cart-subtotal">
+      <span class="cart-subtotal-lbl">Total</span>
+      <span class="cart-subtotal-val">${total.toFixed(2)} €</span>
+    </div>
+    <div class="cart-shipping-note">Livraison offerte · Paiement confirmé par email</div>
+    <button class="cart-btn-checkout" id="cart-send-btn">Envoyer ma commande</button>
+    <button class="cart-btn-continue" id="cart-back-btn">← Modifier le panier</button>`;
+
+  document.getElementById('cart-send-btn').onclick = sendCartOrder;
+  document.getElementById('cart-back-btn').onclick = () => { cartView='items'; renderCart(); };
+}
+
 function renderCartPage() {
   const el = document.getElementById('cart-page-items'); if(!el) return;
   const total = cart.reduce((a,c)=>a+(parseFloat(c.price)||0),0);
   if(!cart.length) {
-    el.innerHTML=`<div class="cart-empty" style="padding:60px 0">
-      <svg width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.2" viewBox="0 0 24 24" style="opacity:.2;margin-bottom:12px"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
-      <div style="font-size:16px;font-weight:500;color:var(--ink2)">Votre panier est vide</div>
-      <button onclick="showPage('shop')" class="btn-primary" style="margin-top:20px">Voir la boutique</button>
+    el.innerHTML=`<div style="text-align:center;padding:60px 0;color:var(--ink3)">
+      <p style="font-size:15px;font-weight:500;margin-bottom:16px">Votre panier est vide</p>
+      <button id="page-cart-shop-btn" class="btn-primary">Voir la boutique</button>
     </div>`;
+    document.getElementById('page-cart-shop-btn').onclick = () => showPage('shop');
     document.getElementById('cart-page-total').textContent='0.00 €';
     document.getElementById('cart-page-checkout-btn').style.display='none';
     return;
@@ -688,71 +785,55 @@ function renderCartPage() {
       ${item.size?`<div class="cart-item-variant">${item.size}</div>`:''}
     </div>
     <div class="cart-page-price">${parseFloat(item.price).toFixed(2)} €</div>
-    <button class="cart-item-del" onclick="removeFromCart(${i});renderCartPage()" title="Retirer">
+    <button class="cart-item-del page-cart-del" data-idx="${i}">
       <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
     </button>
   </div>`).join('');
+  el.querySelectorAll('.page-cart-del').forEach(btn => {
+    btn.onclick = () => { removeFromCart(parseInt(btn.dataset.idx)); renderCartPage(); };
+  });
   document.getElementById('cart-page-total').textContent=total.toFixed(2)+' €';
   const t2=document.getElementById('cart-page-total-2'); if(t2) t2.textContent=total.toFixed(2)+' €';
   document.getElementById('cart-page-checkout-btn').style.display='flex';
-} // end renderCartPage
+}
 
-window.openCart = function() { renderCart(); document.getElementById('cart-modal').classList.remove('hidden'); document.body.style.overflow='hidden'; };
-window.closeCart = function() { document.getElementById('cart-modal').classList.add('hidden'); document.body.style.overflow=''; };
+window.openCart = function() {
+  cartView = 'items';
+  renderCart();
+  document.getElementById('cart-modal').classList.remove('hidden');
+  document.body.style.overflow='hidden';
+};
+window.closeCart = function() {
+  document.getElementById('cart-modal').classList.add('hidden');
+  document.body.style.overflow='';
+};
 window.checkoutCart = function() {
   if(!cart.length) return;
-  // Build summary with photo URLs
-  const summary = cart.map(i=>`- ${i.name}${i.size?' ('+i.size+')':''} — ${parseFloat(i.price).toFixed(2)}€\n  Photo : ${i.img||'N/A'}`).join('\n\n');
-  const total = cart.reduce((a,c)=>a+(parseFloat(c.price)||0),0).toFixed(2);
-
-  // Show inline checkout form inside cart
-  const footer = document.getElementById('cart-footer-section');
-  footer.innerHTML = `
-    <div style="margin-bottom:12px">
-      <div style="font-size:13px;font-weight:600;color:var(--ink);margin-bottom:10px">Vos coordonnées</div>
-      <input id="co-checkout-name" type="text" placeholder="Votre prénom et nom" maxlength="60"
-        style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:var(--r-sm);background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;font-size:13px;outline:none;margin-bottom:8px">
-      <input id="co-checkout-email" type="email" placeholder="Votre email"
-        style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:var(--r-sm);background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;font-size:13px;outline:none;margin-bottom:4px">
-      <div id="co-checkout-err" style="font-size:11px;color:#c04040;min-height:14px;margin-bottom:6px"></div>
-    </div>
-    <div class="cart-subtotal" style="margin-bottom:4px">
-      <span class="cart-subtotal-lbl">Total</span>
-      <span class="cart-subtotal-val">${total} €</span>
-    </div>
-    <div class="cart-shipping-note">Livraison offerte</div>
-    <button class="cart-btn-checkout" onclick="sendCartOrder('${summary.replace(/'/g,"\\'")}','${total}')">
-      Confirmer la commande
-    </button>
-    <button class="cart-btn-continue" onclick="openCart()">← Modifier le panier</button>
-  `;
+  cartView = 'checkout';
+  openCart();
 };
 
-window.sendCartOrder = async function(summary, total) {
+window.sendCartOrder = async function() {
   const name = document.getElementById('co-checkout-name')?.value.trim();
   const email = document.getElementById('co-checkout-email')?.value.trim();
   const err = document.getElementById('co-checkout-err');
   if(!name) { err.textContent='Veuillez entrer votre nom.'; return; }
   if(!email || !email.includes('@')) { err.textContent='Veuillez entrer un email valide.'; return; }
   err.textContent = '';
-  const btn = document.querySelector('#cart-footer-section .cart-btn-checkout');
+  const btn = document.getElementById('cart-send-btn');
   if(btn) { btn.textContent='Envoi…'; btn.disabled=true; }
   try {
-    const message = `NOUVELLE COMMANDE\n\nClient : ${name}\nEmail : ${email}\n\nArticles :\n${summary}\n\nTotal : ${total}€`;
-    await emailjs.send(EMAILJS_SVC, EMAILJS_TPL, {
-      from_name: name,
-      from_email: email,
-      message,
-    });
-    // Clear cart
-    cart.length = 0;
-    saveCart();
-    updateCartBadge();
+    const total = cart.reduce((a,c)=>a+(parseFloat(c.price)||0),0).toFixed(2);
+    const articleLines = cart.map(i=>`- ${i.name}${i.size?' ('+i.size+')':''} — ${parseFloat(i.price).toFixed(2)}€\n  Photo : ${i.img||'N/A'}`).join('\n\n');
+    const message = `NOUVELLE COMMANDE\n\nClient : ${name}\nEmail : ${email}\n\nArticles :\n${articleLines}\n\nTotal : ${total}€`;
+    await emailjs.send(EMAILJS_SVC, EMAILJS_TPL, { from_name: name, from_email: email, message });
+    cart.length = 0; saveCart(); updateCartBadge(); cartView='items';
     closeCart();
-    showToast('Commande envoyée ! Je vous recontacte sous 24h/48 ✓');
+    showToast('Commande envoyée ! Je vous recontacte sous 24h ✓');
   } catch(e) {
-    if(btn) { btn.textContent='Confirmer la commande'; btn.disabled=false; }
-    document.getElementById('co-checkout-err').textContent = 'Erreur d\'envoi. Réessayez.';
+    if(btn) { btn.textContent='Envoyer ma commande'; btn.disabled=false; }
+    const errEl = document.getElementById('co-checkout-err');
+    if(errEl) errEl.textContent = "Erreur d'envoi. Réessayez.";
   }
 };
 
@@ -1178,6 +1259,36 @@ body.dark .tracking-result-card{background:#111;border-color:#222}
 .tracking-step-info{flex:1}
 .tracking-step-label{font-size:13px;font-weight:600;color:var(--ink)}
 .tracking-step-date{font-size:11px;color:var(--ink3);margin-top:2px}
+/* ── CART UPSELL ── */
+.cart-upsell{border-top:1px solid var(--border);padding:14px 20px}
+.cart-upsell-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--ink3);margin-bottom:10px}
+.cart-upsell-item{display:grid;grid-template-columns:44px 1fr auto;gap:10px;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)}
+.cart-upsell-item:last-child{border-bottom:none}
+.cart-upsell-img{width:44px;height:44px;object-fit:cover;border-radius:var(--r-sm);background:var(--bg)}
+.cart-upsell-name{font-size:12px;font-weight:600;color:var(--ink);line-height:1.3;margin-bottom:2px}
+.cart-upsell-price{font-size:12px;color:var(--ink3)}
+.cart-upsell-add{width:28px;height:28px;border-radius:50%;background:var(--ink);color:#fff;border:none;cursor:pointer;font-size:18px;line-height:1;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:opacity .14s}
+.cart-upsell-add:hover{opacity:.8}
+/* ── CART CHECKOUT FORM ── */
+.cart-checkout-summary{padding:16px 20px}
+.cart-checkout-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--ink3);margin-bottom:12px}
+.cart-checkout-item{display:grid;grid-template-columns:52px 1fr auto;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)}
+.cart-checkout-item:last-child{border-bottom:none}
+.cart-checkout-img{width:52px;height:52px;object-fit:cover;border-radius:var(--r-sm)}
+.cart-checkout-name{font-size:13px;font-weight:600;color:var(--ink)}
+.cart-checkout-variant{font-size:11px;color:var(--ink3)}
+.cart-checkout-price{font-size:14px;font-weight:700;font-family:'Playfair Display',serif;color:var(--ink);white-space:nowrap}
+.cart-checkout-total-row{display:flex;justify-content:space-between;padding:12px 0 0;font-size:14px;font-weight:700;color:var(--ink)}
+.cart-checkout-form{margin-bottom:12px}
+.cart-form-title{font-size:13px;font-weight:600;color:var(--ink);margin-bottom:10px}
+.cart-form-input{width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:var(--r-sm);background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;font-size:13px;outline:none;margin-bottom:8px;transition:border-color .14s;display:block;box-sizing:border-box}
+.cart-form-input:focus{border-color:var(--ink)}
+.cart-form-err{font-size:11px;color:#c04040;min-height:14px;margin-bottom:6px}
+body.dark .cart-checkout-item{border-color:#222}
+body.dark .cart-upsell{border-color:#222}
+body.dark .cart-upsell-item{border-color:#222}
+body.dark .cart-form-input{background:#1a1a1a;border-color:#333;color:#f0f0f0}
+/* ── TOAST ── */
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(60px);background:var(--ink);color:#fff;padding:10px 20px;border-radius:20px;font-size:13px;font-weight:500;z-index:999;opacity:0;transition:all .22s;pointer-events:none}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
