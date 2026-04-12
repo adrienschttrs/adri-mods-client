@@ -749,7 +749,7 @@ window.sendCartOrder = async function(summary, total) {
     saveCart();
     updateCartBadge();
     closeCart();
-    showToast('Commande envoyée ! Je vous recontacte sous 24h ✓');
+    showToast('Commande envoyée ! Je vous recontacte sous 24h/48 ✓');
   } catch(e) {
     if(btn) { btn.textContent='Confirmer la commande'; btn.disabled=false; }
     document.getElementById('co-checkout-err').textContent = 'Erreur d\'envoi. Réessayez.';
