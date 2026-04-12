@@ -1039,13 +1039,8 @@ window.sendCartOrder = async function() {
     if(btn) { btn.textContent='Envoyer ma commande'; btn.disabled=false; }
     const errEl = document.getElementById('co-checkout-err');
     if(errEl) {
-      // Show specific error to help diagnose
       const msg = e?.message || e?.code || String(e);
-      errEl.textContent = msg.includes('network') || msg.includes('fetch') || msg.includes('offline')
-        ? 'Erreur réseau. Vérifiez votre connexion et réessayez.'
-        : msg.includes('permission') || msg.includes('auth')
-        ? 'Erreur d\'autorisation. Rechargez la page.'
-        : `Erreur : ${msg.slice(0,80)}`;
+      errEl.textContent = msg.slice(0,200);
     }
   }
 };
