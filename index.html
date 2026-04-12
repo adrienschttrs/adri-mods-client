@@ -1033,12 +1033,20 @@ window.sendCartOrder = async function() {
     cart.length = 0; saveCart(); updateCartBadge(); cartView='items';
     closeCart();
     showPage('confirmation');
-    // Store name for confirmation page
     window._lastOrderName = name;
   } catch(e) {
+    console.error('sendCartOrder error:', e);
     if(btn) { btn.textContent='Envoyer ma commande'; btn.disabled=false; }
     const errEl = document.getElementById('co-checkout-err');
-    if(errEl) errEl.textContent = "Erreur d'envoi. Réessayez.";
+    if(errEl) {
+      // Show specific error to help diagnose
+      const msg = e?.message || e?.code || String(e);
+      errEl.textContent = msg.includes('network') || msg.includes('fetch') || msg.includes('offline')
+        ? 'Erreur réseau. Vérifiez votre connexion et réessayez.'
+        : msg.includes('permission') || msg.includes('auth')
+        ? 'Erreur d\'autorisation. Rechargez la page.'
+        : `Erreur : ${msg.slice(0,80)}`;
+    }
   }
 };
 
@@ -2092,7 +2100,7 @@ body.dark .shop-topbar-wrap{background:transparent}
       <div class="section-hdr">
         <div class="section-eyebrow">Nos créations</div>
         <h2 class="section-title">Dernières montres disponibles</h2>
-        <p class="section-sub">Chaque pièce est unique. Une fois vendue, elle ne revient pas.</p>
+        <p class="section-sub">Découvrez nos dernières créations disponibles.</p>
       </div>
       <div class="product-grid" id="featured-grid"><div class="no-products">Chargement…</div></div>
       <div style="text-align:center;margin-top:32px">
