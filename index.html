@@ -149,7 +149,7 @@ import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/fireba
 import { getFirestore, collection, doc, addDoc, deleteDoc, onSnapshot, query, where, orderBy, getDocs } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 
-const INSTAGRAM   = 'https://instagram.com/adrimods';
+const INSTAGRAM   = 'https://instagram.com/adrienschttrs';
 const VINTED      = 'https://www.vinted.be';
 const ABOUT_PHOTO = 'https://res.cloudinary.com/dsdbkj5nf/image/upload/f_auto,q_auto,w_800/v1775753178/4543aofvox0c1_g1cip5.jpg';
 
@@ -2027,6 +2027,10 @@ body.dark .shop-topbar-wrap{background:transparent}
         <svg width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
         <span class="cart-badge" id="cart-badge">0</span>
       </button>
+      <button class="nav-cta desktop-only" onclick="openSocial(INSTAGRAM)">
+        <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1.5" fill="currentColor" stroke="none"/></svg>
+        Instagram
+      </button>
       <!-- Hamburger -->
       <button class="hamburger" id="hamburger-btn" onclick="toggleMobileMenu()" aria-label="Menu">
         <span></span><span></span><span></span>
@@ -2048,6 +2052,10 @@ body.dark .shop-topbar-wrap{background:transparent}
   <button class="mobile-nav-link" onclick="showPage('contact');closeMobileMenu()">Contact</button>
   <button class="mobile-nav-link" onclick="showPage('tracking');closeMobileMenu()">Suivi de commande</button>
   <button class="mobile-nav-link" onclick="showPage('faq');closeMobileMenu()">FAQ & CGV</button>
+  <button class="mobile-nav-link" onclick="openSocial(INSTAGRAM);closeMobileMenu()" style="display:flex;align-items:center;gap:8px">
+    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1.5" fill="currentColor" stroke="none"/></svg>
+    Instagram
+  </button>
 </div>
 
 <!-- ══ HOME ══ -->
@@ -2348,6 +2356,7 @@ body.dark .shop-topbar-wrap{background:transparent}
         <button class="legal-tab active" data-tab="faq" onclick="showLegal('faq')">❓ FAQ</button>
         <button class="legal-tab" data-tab="retours" onclick="showLegal('retours')">📦 Retours</button>
         <button class="legal-tab" data-tab="cgv" onclick="showLegal('cgv')">📄 CGV</button>
+        <button class="legal-tab" data-tab="privacy" onclick="showLegal('privacy')">🔒 Confidentialité</button>
       </div>
 
       <!-- FAQ -->
@@ -2458,11 +2467,57 @@ body.dark .shop-topbar-wrap{background:transparent}
         </div>
       </div>
 
+      <!-- POLITIQUE DE CONFIDENTIALITÉ -->
+      <div class="legal-section" data-tab="privacy" style="display:none">
+        <div class="legal-content">
+          <h3>Politique de confidentialité — Adri Mods</h3>
+          <p><em>Dernière mise à jour : avril 2025</em></p>
+
+          <h3>1. Responsable du traitement</h3>
+          <p>Adrien Schutters, domicilié en Belgique. Contact : via le formulaire du site.</p>
+
+          <h3>2. Données collectées</h3>
+          <p>Lors d'une commande, nous collectons : votre prénom et nom, votre adresse email. Ces données sont nécessaires au traitement de votre commande. Nous ne collectons pas de données de carte bancaire (le paiement se fait hors ligne).</p>
+
+          <h3>3. Utilisation des données</h3>
+          <p>Vos données sont utilisées exclusivement pour :</p>
+          <ul style="margin:8px 0 8px 20px;line-height:1.8;color:var(--ink2);font-size:14px">
+            <li>Traiter et suivre votre commande</li>
+            <li>Vous envoyer un email de confirmation</li>
+            <li>Vous contacter en cas de question sur votre commande</li>
+          </ul>
+          <p>Vos données ne sont jamais vendues ni transmises à des tiers à des fins commerciales.</p>
+
+          <h3>4. Google Analytics</h3>
+          <p>Ce site utilise Google Analytics 4 pour mesurer l'audience (pages visitées, durée, pays d'origine). Ces données sont anonymisées et agrégées — elles ne permettent pas de vous identifier personnellement. Google agit en tant que sous-traitant. Vous pouvez vous opposer à ce suivi via l'extension <a href="https://tools.google.com/dlpage/gaoptout" target="_blank" style="color:var(--gold)">Google Analytics Opt-out</a>.</p>
+
+          <h3>5. Cookies</h3>
+          <p>Ce site utilise uniquement des cookies essentiels au fonctionnement (panier, préférences d'affichage) et des cookies analytiques de Google Analytics. Aucun cookie publicitaire n'est utilisé.</p>
+
+          <h3>6. Conservation des données</h3>
+          <p>Les données de commande sont conservées 3 ans à compter de la date de commande, conformément aux obligations comptables belges.</p>
+
+          <h3>7. Vos droits (RGPD)</h3>
+          <p>Conformément au Règlement Général sur la Protection des Données (UE 2016/679), vous disposez des droits suivants :</p>
+          <ul style="margin:8px 0 8px 20px;line-height:1.8;color:var(--ink2);font-size:14px">
+            <li><strong>Droit d'accès</strong> — obtenir une copie de vos données</li>
+            <li><strong>Droit de rectification</strong> — corriger des données inexactes</li>
+            <li><strong>Droit à l'effacement</strong> — supprimer vos données</li>
+            <li><strong>Droit d'opposition</strong> — vous opposer au traitement</li>
+          </ul>
+          <p>Pour exercer ces droits, contactez-nous via le formulaire du site. Nous répondrons dans un délai de 30 jours.</p>
+
+          <h3>8. Hébergement & Sécurité</h3>
+          <p>Le site est hébergé sur Firebase (Google Cloud, serveurs en Europe). Les données de commandes sont stockées dans Firebase Firestore avec accès sécurisé. Les communications sont chiffrées via HTTPS.</p>
+
+          <h3>9. Contact & réclamations</h3>
+          <p>Pour toute question relative à vos données personnelles, contactez-nous via le formulaire du site. En cas de réclamation non résolue, vous pouvez contacter l'Autorité de Protection des Données belge : <strong>autoriteprotectiondonnees.be</strong></p>
+        </div>
+      </div>
+
     </div>
   </div>
 </div>
-
-<!-- ══ CONTACT ══ -->
 <div class="page" id="page-contact">
   <div class="page-content">
     <div class="section" id="contact">
@@ -2699,6 +2754,7 @@ body.dark .shop-topbar-wrap{background:transparent}
       <span class="footer-link" onclick="showPage('contact')">Contact</span>
       <span class="footer-link" onclick="showPage('tracking')">Suivi commande</span>
       <span class="footer-link" onclick="showPage('faq')">FAQ & CGV</span>
+      <span class="footer-link" onclick="openSocial(INSTAGRAM)">Instagram</span>
     </div>
     <div class="footer-copy">© 2025 Adri Mods — Tous droits réservés</div>
   </div>
