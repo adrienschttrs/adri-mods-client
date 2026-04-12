@@ -18,12 +18,15 @@ emailjs.init(EMAILJS_KEY);
 window.sendContact = async function(e) {
   e.preventDefault();
   const btn=document.getElementById('cf-btn'); btn.textContent='Envoi…'; btn.disabled=true;
+  const name = document.getElementById('c-name').value;
+  const email = document.getElementById('c-email').value;
+  const msg = document.getElementById('c-msg').value;
   try {
     await emailjs.send(EMAILJS_SVC, EMAILJS_TPL, {
-      from_name:  `Message client — ${document.getElementById('c-name').value}`,
-      from_email: document.getElementById('c-email').value,
-      subject: 'Nouveau message — Adri Mods',
-      message:    document.getElementById('c-msg').value,
+      from_name:  name,
+      from_email: email,
+      subject:    `Question / Message — Adri Mods`,
+      message:    `De : ${name} (${email})\n\n${msg}`,
     });
     btn.textContent='Envoyé ✓'; btn.style.background='#2a7a4a';
     document.getElementById('contact-form').reset();
@@ -51,10 +54,10 @@ window.sendCustomOrder = async function(e) {
       document.getElementById('co-details').value,
     ].join('\n') + photoLine;
     await emailjs.send(EMAILJS_SVC, EMAILJS_TPL, {
-      from_name:  `Commande personnalisée — ${document.getElementById('co-name').value}`,
+      from_name:  document.getElementById('co-name').value,
       from_email: document.getElementById('co-email').value,
-      subject: 'Commande personnalisée — Adri Mods',
-      message:    msg,
+      subject:    `Commande personnalisée — Adri Mods`,
+      message:    `De : ${document.getElementById('co-name').value} (${document.getElementById('co-email').value})\n\n${msg}`,
     });
     btn.textContent='Demande envoyée ✓'; btn.style.background='#2a7a4a';
     document.getElementById('custom-order-form').reset();
@@ -902,9 +905,6 @@ window.sendCartOrder = async function() {
 
     // ── Email à toi (admin) ──
     const adminMsg = [
-      `Client  : ${name}`,
-      `Email   : ${email}`,
-      '',
       '── Articles ──────────────────',
       articleLines,
       '',
@@ -913,10 +913,10 @@ window.sendCartOrder = async function() {
     ].join('\n');
 
     await emailjs.send(EMAILJS_SVC, EMAILJS_TPL, {
-      from_name: `Nouvelle commande — ${name}`,
+      from_name:  name,
       from_email: email,
-      subject: `Nouvelle commande — Adri Mods`,
-      message: adminMsg,
+      subject:    `Nouvelle commande — Adri Mods`,
+      message:    adminMsg,
     });
 
     // ── Email de confirmation au client ──
