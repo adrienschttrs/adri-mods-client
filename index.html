@@ -905,6 +905,22 @@ window.sendCartOrder = async function() {
       return `▸ ${item.name}${item.size?' ('+item.size+')':''} — ${dp.toFixed(2)}€${isDisc?' (-20%)':''}\n  Photo : ${item.img||'N/A'}`;
     }).join('\n\n');
 
+    // ── Sauvegarder dans Firebase ──
+    const orderData = {
+      clientName: name,
+      clientEmail: email.toLowerCase(),
+      items: cart.map(item => {
+        const isDisc2 = discountApplied && item.id===cheapestId;
+        const price = parseFloat(item.price)||0;
+        return `${item.name}${item.size?' ('+item.size+')':''} — ${(isDisc2?price*0.8:price).toFixed(2)}€`;
+      }),
+      total: total.toFixed(2)+'€',
+      status: 'pending',
+      ts: Date.now(),
+      statusDate: Date.now(),
+    };
+    await addDoc(collection(db,'orders'), orderData);
+
     // ── Email à toi (admin) ──
     const adminMsg = [
       '── Articles ──────────────────',
@@ -968,7 +984,8 @@ window.searchOrder = async function() {
   if(!email) { result.innerHTML=`<p style="color:#c04040;font-size:13px">Veuillez entrer votre adresse email.</p>`; return; }
   result.innerHTML=`<div style="font-size:13px;color:var(--ink3);text-align:center;padding:20px">Recherche en cours…</div>`;
   try {
-    const snap = await getDocs(query(collection(db,'orders'), where('email','==',email)));
+    // Query by clientEmail (catalogue field)
+    const snap = await getDocs(query(collection(db,'orders'), where('clientEmail','==',email)));
     if(snap.empty) {
       result.innerHTML=`<div class="tracking-result-card" style="text-align:center">
         <svg width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.2" viewBox="0 0 24 24" style="opacity:.2;margin-bottom:12px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
