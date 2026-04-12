@@ -995,7 +995,9 @@ window.sendCartOrder = async function() {
 
     cart.length = 0; saveCart(); updateCartBadge(); cartView='items';
     closeCart();
-    showToast('Commande envoyée ! Je vous recontacte sous 24/48h ✓');
+    showPage('confirmation');
+    // Store name for confirmation page
+    window._lastOrderName = name;
   } catch(e) {
     if(btn) { btn.textContent='Envoyer ma commande'; btn.disabled=false; }
     const errEl = document.getElementById('co-checkout-err');
@@ -1080,6 +1082,11 @@ window.showPage = function(page) {
   window.scrollTo({top:0,behavior:'smooth'});
   if(page==='shop') { renderShop(); renderSidebar(); }
   if(page==='cart') { renderCartPage(); }
+  if(page==='confirmation') {
+    const firstName = (window._lastOrderName||'').split(' ')[0] || '';
+    const el = document.getElementById('confirmation-name');
+    if(el) el.textContent = firstName ? `Merci ${firstName} !` : 'Commande envoyée !';
+  }
 };
 window.openSocial = function(url) { window.open(url,'_blank'); };
 
@@ -1119,7 +1126,23 @@ document.addEventListener('DOMContentLoaded', function() {
   // About photo
   const img=document.getElementById('about-img-el');
   if(img&&ABOUT_PHOTO){img.src=ABOUT_PHOTO;img.style.display='block';document.getElementById('about-icon-fallback').style.display='none';}
+  // Cookie banner
+  if(!localStorage.getItem('adrimods-cookies')) {
+    setTimeout(()=>{ const b=document.getElementById('cookie-banner'); if(b) b.style.display='flex'; }, 1500);
+  }
+  // Image fallback — replace broken images with placeholder
+  document.addEventListener('error', function(e) {
+    if(e.target.tagName==='IMG' && !e.target.dataset.fallback) {
+      e.target.dataset.fallback='1';
+      e.target.src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 200 200'%3E%3Crect width='200' height='200' fill='%23f0ede8'/%3E%3Ccircle cx='100' cy='100' r='40' fill='none' stroke='%23d0ccc4' stroke-width='2'/%3E%3Cline x1='100' y1='60' x2='100' y2='100' stroke='%23d0ccc4' stroke-width='2'/%3E%3Cline x1='100' y1='100' x2='120' y2='88' stroke='%23d0ccc4' stroke-width='2'/%3E%3C/svg%3E";
+    }
+  }, true);
 });
+
+window.acceptCookies = function() {
+  localStorage.setItem('adrimods-cookies','1');
+  const b=document.getElementById('cookie-banner'); if(b) b.style.display='none';
+};
 </script>
 
 <style>
@@ -1408,7 +1431,26 @@ body.dark .cart-footer{background:#111;border-color:#222}
 .cart-summary-total{font-size:16px;font-weight:700;color:var(--ink)}
 body.dark .cart-summary-box,.body.dark .cart-page-item{border-color:#222}
 
-/* ── TRACKING ── */
+/* ── CONFIRMATION PAGE ── */
+.confirmation-box{max-width:520px;width:100%;text-align:center}
+.confirmation-icon{margin-bottom:20px;display:flex;justify-content:center}
+.confirmation-title{font-family:'Playfair Display',serif;font-size:28px;font-weight:500;color:var(--ink);margin-bottom:10px}
+.confirmation-sub{font-size:14px;color:var(--ink3);margin-bottom:28px;line-height:1.6}
+.confirmation-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:24px;margin-bottom:28px;text-align:left;display:flex;flex-direction:column;gap:20px}
+.confirmation-step{display:flex;gap:14px;align-items:flex-start}
+.confirmation-step-num{width:28px;height:28px;border-radius:50%;background:var(--ink);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px}
+.confirmation-step-title{font-size:13px;font-weight:600;color:var(--ink);margin-bottom:3px}
+.confirmation-step-text{font-size:12px;color:var(--ink3);line-height:1.5}
+body.dark .confirmation-card{background:#1a1a1a;border-color:#2a2a2a}
+/* ── COOKIE BANNER ── */
+.cookie-banner{position:fixed;bottom:0;left:0;right:0;z-index:500;background:var(--ink);color:rgba(255,255,255,.9);padding:14px 24px;display:flex;align-items:center;justify-content:center;box-shadow:0 -4px 24px rgba(0,0,0,.2)}
+.cookie-inner{display:flex;align-items:center;justify-content:space-between;gap:20px;max-width:900px;width:100%;flex-wrap:wrap}
+.cookie-text{display:flex;align-items:center;gap:10px;font-size:12px;line-height:1.5;color:rgba(255,255,255,.8);flex:1;min-width:200px}
+.cookie-actions{display:flex;gap:8px;flex-shrink:0}
+.cookie-btn-accept{padding:8px 20px;background:var(--gold);color:#fff;border:none;border-radius:var(--r-sm);font-size:12px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;transition:opacity .14s}
+.cookie-btn-accept:hover{opacity:.88}
+.cookie-btn-info{padding:8px 14px;background:transparent;color:rgba(255,255,255,.6);border:1px solid rgba(255,255,255,.2);border-radius:var(--r-sm);font-size:12px;cursor:pointer;font-family:'Inter',sans-serif;transition:all .14s}
+.cookie-btn-info:hover{color:#fff;border-color:rgba(255,255,255,.5)}
 .tracking-search-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:28px}
 .tracking-result-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:24px;margin-top:20px}
 .tracking-status{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:20px;font-size:12px;font-weight:600;margin-bottom:16px}
@@ -2449,6 +2491,62 @@ body.dark .shop-topbar-wrap{background:transparent}
         </div>
         <div id="tracking-result" style="margin-top:28px"></div>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ CONFIRMATION ══ -->
+<div class="page" id="page-confirmation">
+  <div class="page-content">
+    <div class="section" style="min-height:70vh;display:flex;align-items:center;justify-content:center">
+      <div class="confirmation-box">
+        <div class="confirmation-icon">
+          <svg width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" style="color:#2a7a4a"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg>
+        </div>
+        <h2 class="confirmation-title" id="confirmation-name">Commande envoyée !</h2>
+        <p class="confirmation-sub">Votre commande a bien été reçue. Un email de confirmation vous a été envoyé.</p>
+        <div class="confirmation-card">
+          <div class="confirmation-step">
+            <div class="confirmation-step-num">1</div>
+            <div>
+              <div class="confirmation-step-title">Commande reçue</div>
+              <div class="confirmation-step-text">Votre commande est enregistrée et en cours de traitement.</div>
+            </div>
+          </div>
+          <div class="confirmation-step">
+            <div class="confirmation-step-num">2</div>
+            <div>
+              <div class="confirmation-step-title">Confirmation sous 24/48h</div>
+              <div class="confirmation-step-text">Je vous recontacte par email pour confirmer et organiser le paiement.</div>
+            </div>
+          </div>
+          <div class="confirmation-step">
+            <div class="confirmation-step-num">3</div>
+            <div>
+              <div class="confirmation-step-title">Expédition</div>
+              <div class="confirmation-step-text">Votre montre est préparée et expédiée avec soin depuis la Belgique.</div>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+          <button class="btn-primary" onclick="showPage('shop')">Continuer mes achats</button>
+          <button class="btn-secondary" onclick="showPage('tracking')">Suivre ma commande</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- COOKIE BANNER -->
+<div id="cookie-banner" class="cookie-banner" style="display:none">
+  <div class="cookie-inner">
+    <div class="cookie-text">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <span>Ce site utilise uniquement des cookies essentiels au fonctionnement (panier, préférences). Aucun cookie publicitaire ou de tracking.</span>
+    </div>
+    <div class="cookie-actions">
+      <button class="cookie-btn-accept" onclick="acceptCookies()">Accepter</button>
+      <button class="cookie-btn-info" onclick="showPage('faq')">En savoir plus</button>
     </div>
   </div>
 </div>
