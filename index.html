@@ -149,7 +149,8 @@ import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.0/fireba
 import { getFirestore, collection, doc, addDoc, deleteDoc, onSnapshot, query, where, orderBy, getDocs } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
 import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 
-const INSTAGRAM   = 'https://instagram.com/adrienschttrs';
+const INSTAGRAM = 'https://instagram.com/adrienschttrs';
+window.INSTAGRAM = INSTAGRAM;
 const VINTED      = 'https://www.vinted.be';
 const ABOUT_PHOTO = 'https://res.cloudinary.com/dsdbkj5nf/image/upload/f_auto,q_auto,w_800/v1775753178/4543aofvox0c1_g1cip5.jpg';
 
@@ -2529,9 +2530,11 @@ body.dark .shop-topbar-wrap{background:transparent}
       <div class="contact-grid">
         <div class="contact-info">
           <h3>Parlons-en</h3>
-          <p>Pour commander, demander un devis ou poser une question — Contactez-moi via le formulaire ci-contre.</p>
-          
-          </div>
+          <p>Pour commander, demander un devis ou poser une question — Contactez-moi via le formulaire ci-contre ou directement sur Instagram.</p>
+          <button class="btn-instagram" onclick="openSocial(INSTAGRAM)" style="margin-bottom:20px">
+            <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1.5" fill="currentColor" stroke="none"/></svg>
+            @adrienschttrs
+          </button>
 
           <div class="contact-hours">
             <div class="ch-title">🕐 Horaires de réponse</div>
