@@ -959,7 +959,7 @@ window.sendCartOrder = async function() {
       return `▸ ${item.name}${item.size?' ('+item.size+')':''} — ${dp.toFixed(2)}€${isDisc?' (-20%)':''}\n  Photo : ${item.img||'N/A'}`;
     }).join('\n\n');
 
-    // ── Sauvegarder dans Firebase ──
+    // ── Sauvegarder dans Firebase (toujours) ──
     const orderData = {
       clientName: name,
       clientEmail: email.toLowerCase(),
@@ -975,7 +975,7 @@ window.sendCartOrder = async function() {
     };
     await addDoc(collection(db,'orders'), orderData);
 
-    // ── Email à toi (admin) ──
+    // ── Emails (non bloquant — commande déjà sauvée si ça échoue) ──
     const adminMsg = [
       '── Articles ──────────────────',
       articleLines,
@@ -984,14 +984,6 @@ window.sendCartOrder = async function() {
       `Total : ${total.toFixed(2)}€`,
     ].join('\n');
 
-    await emailjs.send(EMAILJS_SVC, EMAILJS_TPL, {
-      from_name:  name,
-      from_email: email,
-      subject:    `Nouvelle commande — Adri Mods`,
-      message:    adminMsg,
-    });
-
-    // ── Email de confirmation au client ──
     const clientMsg = [
       `Bonjour ${name},`,
       '',
@@ -1015,12 +1007,28 @@ window.sendCartOrder = async function() {
       'Adri — Adri Mods',
     ].join('\n');
 
-    await emailjs.send(EMAILJS_SVC, EMAILJS_TPL_CLIENT, {
-      from_name: 'Adri Mods',
-      to_email: email,
-      subject: `Confirmation de commande — Adri Mods`,
-      message: clientMsg,
-    });
+    // Send emails — if they fail the order is still saved in Firebase
+    try {
+      await emailjs.send(EMAILJS_SVC, EMAILJS_TPL, {
+        from_name:  name,
+        from_email: email,
+        subject:    `Nouvelle commande — Adri Mods`,
+        message:    adminMsg,
+      });
+    } catch(emailErr) {
+      console.warn('Email admin non envoyé:', emailErr);
+    }
+
+    try {
+      await emailjs.send(EMAILJS_SVC, EMAILJS_TPL_CLIENT, {
+        from_name: 'Adri Mods',
+        to_email:  email,
+        subject:   `Confirmation de commande — Adri Mods`,
+        message:   clientMsg,
+      });
+    } catch(emailErr) {
+      console.warn('Email client non envoyé:', emailErr);
+    }
 
     cart.length = 0; saveCart(); updateCartBadge(); cartView='items';
     closeCart();
