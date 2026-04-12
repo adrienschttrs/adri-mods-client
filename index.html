@@ -524,16 +524,35 @@ window.toggleDarkMode = function() {
 window.openProduct = function(id) {
   const p=allProducts.find(x=>x.id===id); if(!p) return;
   const sold=p.stock==='vendu';
-  // Utilise les variantes si disponibles, sinon les anciennes tailles
   const hasVariants = p.variants && p.variants.length > 0;
   const variants = hasVariants ? p.variants : [];
   const sizes = !hasVariants && p.sizes ? p.sizes.split(',').map(s=>s.trim()).filter(Boolean) : [];
+  // Build images array - use imgs if available, fallback to single img
+  const imgs = (p.imgs && p.imgs.length) ? p.imgs : (p.img ? [p.img] : []);
+  const multiImg = imgs.length > 1;
+
+  const galleryHtml = imgs.length ? `
+    <div class="pm-gallery" id="pm-gallery">
+      <div class="pm-gallery-main" id="pm-gallery-main">
+        <img src="${imgs[0]}" alt="${p.name}" id="pm-main-img">
+        ${sold?'<div class="pm-sold">Vendu</div>':''}
+        ${multiImg?`
+        <button class="pm-gallery-prev" onclick="pmGalleryNav(-1)">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <button class="pm-gallery-next" onclick="pmGalleryNav(1)">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>`:``}
+      </div>
+      ${multiImg?`<div class="pm-gallery-thumbs" id="pm-gallery-thumbs">
+        ${imgs.map((url,i)=>`<div class="pm-thumb${i===0?' active':''}" onclick="pmGallerySet(${i})" data-i="${i}">
+          <img src="${url}" alt="">
+        </div>`).join('')}
+      </div>`:''}
+    </div>` : `<div class="pm-img"><div style="width:100%;height:100%;background:var(--bg);display:flex;align-items:center;justify-content:center;color:var(--ink3)">Pas de photo</div></div>`;
 
   document.getElementById('product-modal-body').innerHTML=`
-    <div class="pm-img">
-      <img src="${p.img}" alt="${p.name}">
-      ${sold?'<div class="pm-sold">Vendu</div>':''}
-    </div>
+    ${galleryHtml}
     <div class="pm-info">
       <h2 class="pm-name">${p.name}</h2>
       ${!sold?`<div class="pm-price">${parseFloat(p.price).toFixed(2)} €</div>`:'<div class="pm-price sold-text">Vendu</div>'}
@@ -551,24 +570,41 @@ window.openProduct = function(id) {
             <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
             Ajouter au panier
           </button>
-          <a class="btn-instagram" href="${INSTAGRAM}" target="_blank">
-            <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1.5" fill="currentColor" stroke="none"/></svg>
-            Contacter sur Instagram
-          </a>`:'<p style="color:#888;font-size:14px;text-align:center">Cette pièce n\'est plus disponible.</p>'}
+          <button class="btn-contact-pm" onclick="closeProductModal();showPage('contact')">
+            <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81 19.79 19.79 0 01.08 1.18 2 2 0 012.06 0h3a2 2 0 012 1.72c.127.96.361 1.903.7 2.81a2 2 0 01-.45 2.11L6.09 7.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0122 16.92z"/></svg>
+            Nous contacter
+          </button>`:'<p style="color:#888;font-size:14px;text-align:center">Cette pièce n\'est plus disponible.</p>'}
       </div>
       <div class="pm-guarantee">
         <div class="pm-g-item"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Contrôlée avant expédition</div>
         <div class="pm-g-item"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg> Livraison soignée partout en Europe</div>
-        <div class="pm-g-item">Contactez-nous facilement</div>
+        <div class="pm-g-item"><svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07"/></svg> Contactez-nous facilement</div>
       </div>
       <div class="pm-reviews" id="pm-reviews-list">
         <div class="rv-loading">Chargement des avis…</div>
       </div>
     </div>`;
+
+  // Store imgs for gallery navigation
+  window._pmImgs = imgs;
+  window._pmImgIdx = 0;
+
   document.getElementById('product-modal').classList.remove('hidden');
   document.body.style.overflow='hidden';
   currentProductId = id;
   loadReviewsForProduct(id);
+};
+window.pmGallerySet = function(idx) {
+  const imgs = window._pmImgs; if(!imgs || !imgs[idx]) return;
+  window._pmImgIdx = idx;
+  const mainImg = document.getElementById('pm-main-img');
+  if(mainImg) mainImg.src = imgs[idx];
+  document.querySelectorAll('.pm-thumb').forEach(t => t.classList.toggle('active', parseInt(t.dataset.i)===idx));
+};
+window.pmGalleryNav = function(dir) {
+  const imgs = window._pmImgs; if(!imgs) return;
+  const next = (window._pmImgIdx + dir + imgs.length) % imgs.length;
+  pmGallerySet(next);
 };
 window.selectSize = function(btn) {
   btn.closest('.pm-sizes').querySelectorAll('.size-btn').forEach(b=>b.classList.remove('selected'));
@@ -980,15 +1016,29 @@ a{text-decoration:none;color:inherit}
 .cf-submit:hover:not(:disabled){background:#333}
 .cf-submit:disabled{opacity:.7;cursor:not-allowed}
 
-/* ── PRODUCT MODAL ── */
+/* ── PRODUCT GALLERY ── */
+.pm-gallery{display:flex;flex-direction:column;background:var(--bg);position:relative}
+.pm-gallery-main{position:relative;aspect-ratio:1;overflow:hidden;background:var(--bg)}
+.pm-gallery-main img{width:100%;height:100%;object-fit:cover;transition:opacity .2s}
+.pm-gallery-prev,.pm-gallery-next{position:absolute;top:50%;transform:translateY(-50%);background:rgba(255,255,255,.9);border:1px solid var(--border);border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:2;transition:all .14s;color:var(--ink)}
+.pm-gallery-prev{left:10px}
+.pm-gallery-next{right:10px}
+.pm-gallery-prev:hover,.pm-gallery-next:hover{background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+body.dark .pm-gallery-prev,body.dark .pm-gallery-next{background:rgba(20,20,20,.9);border-color:#333}
+.pm-gallery-thumbs{display:flex;gap:6px;padding:8px;overflow-x:auto;background:var(--bg)}
+.pm-gallery-thumbs::-webkit-scrollbar{height:0}
+.pm-thumb{width:56px;height:56px;flex-shrink:0;border-radius:var(--r-sm);overflow:hidden;cursor:pointer;border:2px solid transparent;transition:border-color .14s;opacity:.65}
+.pm-thumb.active{border-color:var(--ink);opacity:1}
+.pm-thumb img{width:100%;height:100%;object-fit:cover}
 .pm-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200;display:flex;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(4px)}
 .pm-overlay.hidden{display:none}
-.pm-modal{background:var(--surface);border-radius:var(--r);width:100%;max-width:1020px;max-height:92vh;overflow-y:auto;display:grid;grid-template-columns:1.2fr 1fr;box-shadow:0 24px 80px rgba(0,0,0,.3);position:relative}
+.pm-modal{background:var(--surface);border-radius:var(--r);width:100%;max-width:1020px;max-height:92vh;overflow:hidden;display:grid;grid-template-columns:1.1fr 1fr;box-shadow:0 24px 80px rgba(0,0,0,.3);position:relative}
+.pm-gallery{overflow:hidden}
 .pm-img{aspect-ratio:1;background:#f0ede8;overflow:hidden;position:relative}
 .pm-img img{width:100%;height:100%;object-fit:cover;image-rendering:auto}
 .pm-sold{position:absolute;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;font-family:'Playfair Display',serif;font-size:28px;color:#fff;letter-spacing:.1em}
 .pm-close{position:absolute;top:14px;right:14px;width:30px;height:30px;background:rgba(0,0,0,.45);color:#fff;border:none;border-radius:50%;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;z-index:10}
-.pm-info{padding:24px;display:flex;flex-direction:column;overflow-y:auto;max-height:88vh}
+.pm-info{padding:24px;display:flex;flex-direction:column;overflow-y:auto;max-height:92vh}
 .pm-brand{font-family:'DM Mono',monospace;font-size:9px;color:var(--ink3);letter-spacing:.12em;text-transform:uppercase;margin-bottom:6px}
 .pm-name{font-family:'Playfair Display',serif;font-size:22px;font-weight:500;color:var(--ink);line-height:1.2;margin-bottom:10px}
 .pm-price{font-family:'Playfair Display',serif;font-size:24px;font-weight:500;color:var(--ink);margin-bottom:16px}
@@ -1003,6 +1053,8 @@ a{text-decoration:none;color:inherit}
 .pm-actions{display:flex;flex-direction:column;gap:8px;margin-bottom:16px;margin-top:auto}
 .btn-add-cart-big{display:flex;align-items:center;justify-content:center;gap:8px;padding:13px 20px;background:var(--ink);color:#fff;border-radius:var(--r-sm);font-size:14px;font-weight:600;cursor:pointer;border:none;font-family:'Inter',sans-serif;transition:all .14s}
 .btn-add-cart-big:hover{background:#333}
+.btn-contact-pm{display:flex;align-items:center;justify-content:center;gap:8px;padding:11px 20px;background:transparent;color:var(--ink);border:1.5px solid var(--border);border-radius:var(--r-sm);font-size:13px;font-weight:600;cursor:pointer;transition:all .14s;font-family:'Inter',sans-serif}
+.btn-contact-pm:hover{border-color:var(--ink)}
 .btn-instagram{display:flex;align-items:center;justify-content:center;gap:8px;padding:11px 20px;background:#E1306C;color:#fff;border-radius:var(--r-sm);font-size:13px;font-weight:600;cursor:pointer;transition:background .14s;font-family:'Inter',sans-serif;border:none;text-decoration:none}
 .btn-instagram:hover{background:#c0255a}
 .pm-guarantee{display:flex;flex-direction:column;gap:4px;padding-top:12px;border-top:1px solid var(--border)}
