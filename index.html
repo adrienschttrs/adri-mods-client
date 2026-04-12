@@ -10,7 +10,8 @@
 <script>
 // EmailJS config — hors du module pour accès global
 const EMAILJS_SVC = 'service_m0q9his';
-const EMAILJS_TPL = 'template_cs0qicg';
+const EMAILJS_TPL = 'template_cs0qicg';       // → ton adresse (admin)
+const EMAILJS_TPL_CLIENT = 'template_lm3wjk4'; // → adresse du client
 const EMAILJS_KEY = 'Y5CoddsVS6RvfRcZN';
 emailjs.init(EMAILJS_KEY);
 
@@ -19,8 +20,9 @@ window.sendContact = async function(e) {
   const btn=document.getElementById('cf-btn'); btn.textContent='Envoi…'; btn.disabled=true;
   try {
     await emailjs.send(EMAILJS_SVC, EMAILJS_TPL, {
-      from_name:  document.getElementById('c-name').value,
+      from_name:  `Message client — ${document.getElementById('c-name').value}`,
       from_email: document.getElementById('c-email').value,
+      subject: 'Nouveau message — Adri Mods',
       message:    document.getElementById('c-msg').value,
     });
     btn.textContent='Envoyé ✓'; btn.style.background='#2a7a4a';
@@ -49,8 +51,9 @@ window.sendCustomOrder = async function(e) {
       document.getElementById('co-details').value,
     ].join('\n') + photoLine;
     await emailjs.send(EMAILJS_SVC, EMAILJS_TPL, {
-      from_name:  document.getElementById('co-name').value,
+      from_name:  `Commande personnalisée — ${document.getElementById('co-name').value}`,
       from_email: document.getElementById('co-email').value,
+      subject: 'Commande personnalisée — Adri Mods',
       message:    msg,
     });
     btn.textContent='Demande envoyée ✓'; btn.style.background='#2a7a4a';
@@ -618,15 +621,17 @@ window.closeProductModal = function() {
 // ── CART ──────────────────────────────────────────────────────────────────────
 window.addToCart = function(id) {
   const p=allProducts.find(x=>x.id===id); if(!p) return;
-  cart.push({id,name:p.name,price:p.price,img:p.img,size:''});
+  cart.push({id, name:p.name, price:p.price, img:p.img, sid:p.sid, size:''});
   saveCart(); updateCartBadge(); showToast('Ajouté au panier ✓');
+  // Re-render cart if open
+  if(!document.getElementById('cart-modal').classList.contains('hidden')) renderCart();
 };
 window.addToCartFromModal = function(id) {
   const p=allProducts.find(x=>x.id===id); if(!p) return;
   const sel=document.querySelector('.pm-sizes .size-btn.selected');
   const variantName = sel ? sel.dataset.variantName || sel.textContent : '';
-  cart.push({id,name:p.name,price:p.price,img:p.img,size:variantName});
-  saveCart(); updateCartBadge(); closeProductModal(); showToast('Ajouté au panier ✓');
+  cart.push({id, name:p.name, price:p.price, img:p.img, sid:p.sid, size:variantName});
+  saveCart(); updateCartBadge(); closeProductModal(); openCart(); showToast('Ajouté au panier ✓');
 };
 window.removeFromCart = function(i) { cart.splice(i,1); saveCart(); renderCart(); };
 function saveCart() { localStorage.setItem('adrimods-cart',JSON.stringify(cart)); }
@@ -638,13 +643,22 @@ let cartView = 'items';
 
 function calcCartTotal() {
   const watches = cart.filter(i => i.sid === 'complete');
+  // Sort watches by price desc — cheapest gets the discount
+  const sortedWatches = [...watches].sort((a,b) => parseFloat(b.price)-parseFloat(a.price));
+  const cheapestId = watches.length >= 2 ? sortedWatches[sortedWatches.length-1].id : null;
   let total = 0;
+  // Track if we already applied discount (in case of duplicate ids)
+  let discountUsed = false;
   cart.forEach(item => {
     const price = parseFloat(item.price) || 0;
-    const wIdx = watches.indexOf(item);
-    total += (item.sid === 'complete' && wIdx === 1) ? price * 0.8 : price;
+    if(cheapestId && item.id === cheapestId && !discountUsed) {
+      total += price * 0.8;
+      discountUsed = true;
+    } else {
+      total += price;
+    }
   });
-  return { total, discountApplied: watches.length >= 2 };
+  return { total, discountApplied: watches.length >= 2, cheapestId };
 }
 
 function renderCart() {
@@ -772,22 +786,24 @@ function renderCartCheckout(total, discountApplied) {
   const el = document.getElementById('cart-items');
   const footer = document.getElementById('cart-footer-section');
   footer.style.display='block';
-  const watches = cart.filter(i=>i.sid==='complete');
+  const { cheapestId: cId } = calcCartTotal();
   const rawTotal = cart.reduce((a,c)=>a+(parseFloat(c.price)||0),0);
   const discountAmt = rawTotal - total;
+  let discountUsedCO = false;
 
   el.innerHTML = `<div class="cart-checkout-summary">
     <div class="cart-checkout-title">Récapitulatif</div>
     ${cart.map(item=>{
-      const isSecond = item.sid==='complete' && watches.indexOf(item)===1;
+      const isDisc = item.id===cId && !discountUsedCO && cId!==null;
+      if(isDisc) discountUsedCO=true;
       const price = parseFloat(item.price)||0;
-      const displayPrice = isSecond ? price*0.8 : price;
+      const displayPrice = isDisc ? price*0.8 : price;
       return `<div class="cart-checkout-item">
         <img src="${item.img}" class="cart-checkout-img" alt="${item.name}">
         <div class="cart-checkout-info">
           <div class="cart-checkout-name">${item.name}</div>
           ${item.size?`<div class="cart-checkout-variant">${item.size}</div>`:''}
-          ${isSecond?`<div class="cart-checkout-variant" style="color:var(--gold)">-20% appliqué</div>`:''}
+          ${isDisc?`<div class="cart-checkout-variant" style="color:var(--gold)">-20% appliqué</div>`:''}
         </div>
         <div class="cart-checkout-price">${displayPrice.toFixed(2)} €</div>
       </div>`;
@@ -871,70 +887,66 @@ window.sendCartOrder = async function() {
   const btn = document.getElementById('cart-send-btn');
   if(btn) { btn.textContent='Envoi…'; btn.disabled=true; }
   try {
-    const { total, discountApplied } = calcCartTotal();
-    const watches = cart.filter(i=>i.sid==='complete');
+    const { total, discountApplied, cheapestId } = calcCartTotal();
     const rawTotal = cart.reduce((a,c)=>a+(parseFloat(c.price)||0),0);
     const discountAmt = rawTotal - total;
+    let discountUsed = false;
 
-    // Build article lines with photos
     const articleLines = cart.map(item => {
-      const isSecond = item.sid==='complete' && watches.indexOf(item)===1;
+      const isDisc = item.id===cheapestId && !discountUsed && cheapestId!==null;
+      if(isDisc) discountUsed=true;
       const price = parseFloat(item.price)||0;
-      const displayPrice = isSecond ? price*0.8 : price;
-      return `▸ ${item.name}${item.size?' ('+item.size+')':''} — ${displayPrice.toFixed(2)}€${isSecond?' (-20%)':''}\n  Photo : ${item.img||'N/A'}`;
+      const dp = isDisc ? price*0.8 : price;
+      return `▸ ${item.name}${item.size?' ('+item.size+')':''} — ${dp.toFixed(2)}€${isDisc?' (-20%)':''}\n  Photo : ${item.img||'N/A'}`;
     }).join('\n\n');
 
-    // ── Email to admin ──
+    // ── Email à toi (admin) ──
     const adminMsg = [
-      '╔══════════════════════════════╗',
-      '         NOUVELLE COMMANDE',
-      '╚══════════════════════════════╝',
-      '',
       `Client  : ${name}`,
       `Email   : ${email}`,
       '',
       '── Articles ──────────────────',
       articleLines,
       '',
-      discountApplied ? `── Remise 2ème montre : - ${discountAmt.toFixed(2)}€` : '',
-      `── Total : ${total.toFixed(2)}€`,
-      '',
-      'Répondre à cet email pour confirmer la commande.',
-    ].filter(l=>l!==null).join('\n');
+      ...(discountApplied ? [`Remise 2ème montre : - ${discountAmt.toFixed(2)}€`] : []),
+      `Total : ${total.toFixed(2)}€`,
+    ].join('\n');
 
     await emailjs.send(EMAILJS_SVC, EMAILJS_TPL, {
-      from_name: name,
+      from_name: `Nouvelle commande — ${name}`,
       from_email: email,
+      subject: `Nouvelle commande — Adri Mods`,
       message: adminMsg,
     });
 
-    // ── Confirmation email to client ──
+    // ── Email de confirmation au client ──
     const clientMsg = [
       `Bonjour ${name},`,
       '',
       'Merci pour votre commande sur Adri Mods ! 🎉',
       '',
-      'Voici le récapitulatif :',
+      'Récapitulatif de votre commande :',
       '',
       ...cart.map(item => {
-        const isSecond = item.sid==='complete' && watches.indexOf(item)===1;
+        const isDisc2 = discountApplied && item.id===cheapestId;
         const price = parseFloat(item.price)||0;
-        const dp = isSecond ? price*0.8 : price;
-        return `▸ ${item.name}${item.size?' ('+item.size+')':''} — ${dp.toFixed(2)}€${isSecond?' (-20%)':''}`;
+        const dp = isDisc2 ? price*0.8 : price;
+        return `▸ ${item.name}${item.size?' ('+item.size+')':''} — ${dp.toFixed(2)}€${isDisc2?' (-20%)':''}`;
       }),
       '',
-      discountApplied ? `Remise 2ème montre appliquée : - ${discountAmt.toFixed(2)}€` : '',
+      ...(discountApplied ? [`Remise 2ème montre : - ${discountAmt.toFixed(2)}€`] : []),
       `Total : ${total.toFixed(2)}€`,
       '',
       'Je vous recontacte dans les 24/48h pour confirmer et organiser le paiement.',
       '',
       'À très bientôt,',
-      'Adri Mods',
-    ].filter(l=>l!==null).join('\n');
+      'Adri — Adri Mods',
+    ].join('\n');
 
-    await emailjs.send(EMAILJS_SVC, EMAILJS_TPL, {
+    await emailjs.send(EMAILJS_SVC, EMAILJS_TPL_CLIENT, {
       from_name: 'Adri Mods',
-      from_email: email,   // reply-to = client
+      to_email: email,
+      subject: `Confirmation de commande — Adri Mods`,
       message: clientMsg,
     });
 
