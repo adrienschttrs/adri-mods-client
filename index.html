@@ -701,13 +701,59 @@ window.openCart = function() { renderCart(); document.getElementById('cart-modal
 window.closeCart = function() { document.getElementById('cart-modal').classList.add('hidden'); document.body.style.overflow=''; };
 window.checkoutCart = function() {
   if(!cart.length) return;
-  const summary = cart.map(i=>`- ${i.name}${i.size?' ('+i.size+')':''} — ${parseFloat(i.price).toFixed(2)}€`).join('\n');
-  closeCart();
-  showPage('contact');
-  setTimeout(()=>{
-    const msg = document.getElementById('c-msg');
-    if(msg) msg.value = `Bonjour, je souhaite commander :\n\n${summary}\n\nTotal : ${cart.reduce((a,c)=>a+(parseFloat(c.price)||0),0).toFixed(2)}€`;
-  }, 200);
+  // Build summary with photo URLs
+  const summary = cart.map(i=>`- ${i.name}${i.size?' ('+i.size+')':''} — ${parseFloat(i.price).toFixed(2)}€\n  Photo : ${i.img||'N/A'}`).join('\n\n');
+  const total = cart.reduce((a,c)=>a+(parseFloat(c.price)||0),0).toFixed(2);
+
+  // Show inline checkout form inside cart
+  const footer = document.getElementById('cart-footer-section');
+  footer.innerHTML = `
+    <div style="margin-bottom:12px">
+      <div style="font-size:13px;font-weight:600;color:var(--ink);margin-bottom:10px">Vos coordonnées</div>
+      <input id="co-checkout-name" type="text" placeholder="Votre prénom et nom" maxlength="60"
+        style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:var(--r-sm);background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;font-size:13px;outline:none;margin-bottom:8px">
+      <input id="co-checkout-email" type="email" placeholder="Votre email"
+        style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:var(--r-sm);background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;font-size:13px;outline:none;margin-bottom:4px">
+      <div id="co-checkout-err" style="font-size:11px;color:#c04040;min-height:14px;margin-bottom:6px"></div>
+    </div>
+    <div class="cart-subtotal" style="margin-bottom:4px">
+      <span class="cart-subtotal-lbl">Total</span>
+      <span class="cart-subtotal-val">${total} €</span>
+    </div>
+    <div class="cart-shipping-note">Livraison offerte · Expédition depuis la Belgique</div>
+    <button class="cart-btn-checkout" onclick="sendCartOrder('${summary.replace(/'/g,"\\'")}','${total}')">
+      Confirmer la commande
+    </button>
+    <button class="cart-btn-continue" onclick="openCart()">← Modifier le panier</button>
+  `;
+};
+
+window.sendCartOrder = async function(summary, total) {
+  const name = document.getElementById('co-checkout-name')?.value.trim();
+  const email = document.getElementById('co-checkout-email')?.value.trim();
+  const err = document.getElementById('co-checkout-err');
+  if(!name) { err.textContent='Veuillez entrer votre nom.'; return; }
+  if(!email || !email.includes('@')) { err.textContent='Veuillez entrer un email valide.'; return; }
+  err.textContent = '';
+  const btn = document.querySelector('#cart-footer-section .cart-btn-checkout');
+  if(btn) { btn.textContent='Envoi…'; btn.disabled=true; }
+  try {
+    const message = `NOUVELLE COMMANDE\n\nClient : ${name}\nEmail : ${email}\n\nArticles :\n${summary}\n\nTotal : ${total}€`;
+    await emailjs.send(EMAILJS_SVC, EMAILJS_TPL, {
+      from_name: name,
+      from_email: email,
+      message,
+    });
+    // Clear cart
+    cart.length = 0;
+    saveCart();
+    updateCartBadge();
+    closeCart();
+    showToast('Commande envoyée ! Je vous recontacte sous 24h ✓');
+  } catch(e) {
+    if(btn) { btn.textContent='Confirmer la commande'; btn.disabled=false; }
+    document.getElementById('co-checkout-err').textContent = 'Erreur d\'envoi. Réessayez.';
+  }
 };
 
 window.searchOrder = async function() {
